@@ -14,14 +14,10 @@ public class Robot extends SampleRobot {
 	DigitalInput[] DIO;
 	CameraServer server;
 	Encoder encoder;
-	Joystick controller;
 
     public Robot() {
-		controller = new Joystick(0);
     	DIO = new DigitalInput[7];
-    	for(int i = 0; i < 7 ; i++) {
-    		DIO[i] = new DigitalInput(i);
-    	}
+    	for(int i = 0; i < 7 ; i++) DIO[i] = new DigitalInput(i);
     	encoder = new Encoder(8, 9);
     	server = CameraServer.getInstance();
         server.setQuality(50);
@@ -37,7 +33,7 @@ public class Robot extends SampleRobot {
         while (isOperatorControl() && isEnabled()) {
         	for(int i = 0; i < 7; i++) dioToDashboard(i);
         	SmartDashboard.putNumber("Raw", encoder.getRaw());
-            Timer.delay(0.005);		// wait for a motor update time
+        	Timer.delay(0.005);		// wait for a motor update time
         }
     }
     
