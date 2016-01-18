@@ -16,8 +16,8 @@ public class Robot extends SampleRobot {
 	Encoder encoder;
 
     public Robot() {
-    	DIO = new DigitalInput[7];
-    	for(int i = 0; i < 7 ; i++) DIO[i] = new DigitalInput(i);
+    	DIO = new DigitalInput[8];
+    	for(int i = 0; i < 8 ; i++) DIO[i] = new DigitalInput(i);
     	encoder = new Encoder(8, 9);
     	server = CameraServer.getInstance();
         server.setQuality(50);
@@ -31,7 +31,7 @@ public class Robot extends SampleRobot {
     public void operatorControl() {
     	encoder.reset();
         while (isOperatorControl() && isEnabled()) {
-        	for(int i = 0; i < 7; i++) dioToDashboard(i);
+        	for(int i = 0; i < 8; i++) dioToDashboard(i);
         	SmartDashboard.putNumber("Raw", encoder.getRaw());
         	Timer.delay(0.005);		// wait for a motor update time
         }
