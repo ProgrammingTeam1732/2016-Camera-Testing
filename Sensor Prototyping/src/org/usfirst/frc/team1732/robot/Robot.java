@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 
 import com.ni.vision.NIVision;
+import com.ni.vision.NIVision.DrawMode;
 import com.ni.vision.NIVision.Image;
+import com.ni.vision.NIVision.ShapeMode;
 
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -54,28 +56,26 @@ public class Robot extends SampleRobot {
 	int imaqError;
 
 	// Constants
-	NIVision.Range TOTE_HUE_RANGE = new NIVision.Range(101, 64); // Default hue
+	NIVision.Range TOTE_HUE_RANGE = new NIVision.Range(58, 110); // Default hue
 																	// range for
 																	// yellow
 																	// tote
-	NIVision.Range TOTE_SAT_RANGE = new NIVision.Range(88, 255); // Default
+	NIVision.Range TOTE_SAT_RANGE = new NIVision.Range(100, 200); // Default
 																	// saturation
 																	// range for
 																	// yellow
 																	// tote
-	NIVision.Range TOTE_VAL_RANGE = new NIVision.Range(134, 255); // Default
+	NIVision.Range TOTE_VAL_RANGE = new NIVision.Range(206, 255); // Default
 																	// value
 																	// range for
 																	// yellow
 																	// tote
 	double AREA_MINIMUM = 0.5; // Default Area minimum for particle as a
 								// percentage of total image area
-	double LONG_RATIO = 2.22; // Tote long side = 26.9 / Tote height = 12.1 =
+	double RATIO = 1.428; // Tote long side = 26.9 / Tote height = 12.1 =
 								// 2.22
-	double SHORT_RATIO = 1.4; // Tote short side = 16.9 / Tote height = 12.1 =
-								// 1.4
 	double SCORE_MIN = 75.0; // Minimum score to be considered a tote
-	double VIEW_ANGLE = 49.4; // View angle fo camera, set to Axis m1011 by
+	double VIEW_ANGLE = 77.8; // View angle fo camera, set to Axis m1011 by
 								// default, 64 for m1013, 51.7 for 206, 52 for
 								// HD3000 square, 60 for HD3000 640x480
 	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
@@ -84,17 +84,17 @@ public class Robot extends SampleRobot {
 
 	public Robot() {
 		controller = new Joystick(0);
+		/*
 		DIO = new DigitalInput[7];
 		for (int i = 0; i < 7; i++) {
 			DIO[i] = new DigitalInput(i);
 		}
-		encoder = new Encoder(8, 9);
+		encoder = new Encoder(8, 9);*/
 
 		frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
 		binaryFrame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_U8, 0);
 
-		criteria[0] = new NIVision.ParticleFilterCriteria2(NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA, AREA_MINIMUM,
-				100.0, 0, 0);
+		criteria[0] = new NIVision.ParticleFilterCriteria2(NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA, AREA_MINIMUM, 100.0, 0, 0);
 
 		session = NIVision.IMAQdxOpenCamera("cam0", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
 		NIVision.IMAQdxConfigureGrab(session);
@@ -142,9 +142,6 @@ public class Robot extends SampleRobot {
 				int numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
 				SmartDashboard.putNumber("Masked particles", numParticles);
 
-				// Send masked image to dashboard to assist in tweaking mask.
-				CameraServer.getInstance().setImage(binaryFrame);
-
 				// filter out small particles
 				float areaMin = (float) SmartDashboard.getNumber("Area min %", AREA_MINIMUM);
 				criteria[0].lower = areaMin;
@@ -154,7 +151,7 @@ public class Robot extends SampleRobot {
 				numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
 				SmartDashboard.putNumber("Filtered particles", numParticles);
 
-				if (numParticles > 0) {
+				if (numParticles > 0) {					
 					// Measure particles and sort by particle size
 					ArrayList<ParticleReport> particles = new ArrayList<ParticleReport>();
 					for (int particleIndex = 0; particleIndex < numParticles; particleIndex++) {
@@ -166,6 +163,7 @@ public class Robot extends SampleRobot {
 						par.BoundingRectBottom = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM);
 						par.BoundingRectRight = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT);
 						particles.add(par);
+						NIVision.imaqDrawShapeOnImage(binaryFrame, binaryFrame, new NIVision.Rect((int) par.BoundingRectTop, (int) par.BoundingRectLeft, (int) (360 - par.BoundingRectBottom - par.BoundingRectTop), (int) (640 - par.BoundingRectLeft - par.BoundingRectRight)), DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
 					}
 					particles.sort(null);
 
@@ -192,8 +190,11 @@ public class Robot extends SampleRobot {
 				} else {
 					SmartDashboard.putBoolean("IsTote", false);
 				}
-
-				CameraServer.getInstance().setImage(frame);
+				
+				// Send masked image to dashboard to assist in tweaking mask.
+				CameraServer.getInstance().setImage(binaryFrame);
+				
+				//CameraServer.getInstance().setImage(frame);
 			}
 		}
 		NIVision.IMAQdxStopAcquisition(session);
