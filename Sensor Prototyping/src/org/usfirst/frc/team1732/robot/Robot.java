@@ -10,7 +10,7 @@ import com.ni.vision.NIVision.ShapeMode;
 
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
+	
 /**
  * This is a demo program showing the use of the CameraServer class. With start
  * automatic capture, there is no opportunity to process the image. Look at the
@@ -18,11 +18,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * the FRC PC Dashboard.
  */
 public class Robot extends SampleRobot {
-
+	
 	DigitalInput[] DIO;
 	Encoder encoder;
 	Joystick controller;
-
+	
 	int session;
 
 	// A structure to hold measurements of a particle
@@ -34,17 +34,11 @@ public class Robot extends SampleRobot {
 		double BoundingRectRight;
 		double BoundingRectBottom;
 
-		public int compareTo(ParticleReport r) {
-			return (int) (r.Area - this.Area);
-		}
-
-		public int compare(ParticleReport r1, ParticleReport r2) {
-			return (int) (r1.Area - r2.Area);
-		}
+		public int compareTo(ParticleReport r) {return (int) (r.Area - this.Area);}
+		public int compare(ParticleReport r1, ParticleReport r2) {return (int) (r1.Area - r2.Area);}
 	};
 
-	// Structure to represent the scores for the various tests used for target
-	// identification
+	// Structure to represent the scores for the various tests used for target identification
 	public class Scores {
 		double Area;
 		double Aspect;
@@ -56,41 +50,24 @@ public class Robot extends SampleRobot {
 	int imaqError;
 
 	// Constants
-	NIVision.Range TOTE_HUE_RANGE = new NIVision.Range(58, 110); // Default hue
-																	// range for
-																	// yellow
-																	// tote
-	NIVision.Range TOTE_SAT_RANGE = new NIVision.Range(100, 200); // Default
-																	// saturation
-																	// range for
-																	// yellow
-																	// tote
-	NIVision.Range TOTE_VAL_RANGE = new NIVision.Range(206, 255); // Default
-																	// value
-																	// range for
-																	// yellow
-																	// tote
-	double AREA_MINIMUM = 0.5; // Default Area minimum for particle as a
-								// percentage of total image area
-	double RATIO = 1.428; // Tote long side = 26.9 / Tote height = 12.1 =
-								// 2.22
-	double SCORE_MIN = 75.0; // Minimum score to be considered a tote
-	double VIEW_ANGLE = 77.8; // View angle fo camera, set to Axis m1011 by
-								// default, 64 for m1013, 51.7 for 206, 52 for
-								// HD3000 square, 60 for HD3000 640x480
+	NIVision.Range TOTE_HUE_RANGE = new NIVision.Range(58, 110); // Default hue range for goal
+	NIVision.Range TOTE_SAT_RANGE = new NIVision.Range(100, 200); // Default saturation range for goal
+	NIVision.Range TOTE_VAL_RANGE = new NIVision.Range(206, 255); // Default value range for goal
+	double AREA_MINIMUM = 0.5; // Default Area minimum for particle as a percentage of total image area
+	double RATIO = 1.428; // Goal width = 20 in. / goal height = 12 in. = 1.428
+	double SCORE_MIN = 75.0; // Minimum score to be considered a goal
+	double VIEW_ANGLE = 77.8; // View angle for camera, set to Axis m1011 by default, 64 for m1013, 51.7 for 206, 52 for HD3000 square, 60 for HD3000 640x480
 	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
 	NIVision.ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0, 0, 1, 1);
 	Scores scores = new Scores();
 
 	public Robot() {
-		controller = new Joystick(0);
-		/*
+		/*controller = new Joystick(0);
+		DIO = new DigitalInput[8];
 		DIO = new DigitalInput[7];
-		for (int i = 0; i < 7; i++) {
-			DIO[i] = new DigitalInput(i);
-		}
+		for (int i = 0; i < 8; i++) DIO[i] = new DigitalInput(i);
 		encoder = new Encoder(8, 9);*/
-
+		
 		frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
 		binaryFrame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_U8, 0);
 
@@ -109,24 +86,17 @@ public class Robot extends SampleRobot {
 		SmartDashboard.putNumber("Area min %", AREA_MINIMUM);
 	}
 
-	public void dioToDashboard(int port) {
-		SmartDashboard.putBoolean("DIO " + port, DIO[port].get());
-	}
-
 	public void operatorControl() {
 		NIVision.IMAQdxStartAcquisition(session);
-		encoder.reset();
+		// encoder.reset();
 		while (isOperatorControl() && isEnabled()) {
-			for (int i = 0; i < 7; i++)
-				dioToDashboard(i);
-			SmartDashboard.putNumber("Raw", encoder.getRaw());
-
+			// SmartDashboard.putBoolean("Photosensor", DIO[0]()); // For the photosensor, if we need more just use for loop
+			// SmartDashboard.putNumber("Encoder Raw", encoder.getRaw()); // For the encoder
 			if (SmartDashboard.getBoolean("Capture?", false)) {
-				NIVision.IMAQdxGrab(session, frame, 1);
+				NIVision.IMAQdxGrab(session, frame, 1); // What happens if buffer wait is 0?
 
-				// Update threshold values from SmartDashboard. For performance
-				// reasons it is recommended to remove this after calibration is
-				// finished.
+				// Update threshold values from SmartDashboard. For performance reasons it is recommended to remove
+				// this after calibration is finished.
 				TOTE_HUE_RANGE.minValue = (int) SmartDashboard.getNumber("Tote hue min", TOTE_HUE_RANGE.minValue);
 				TOTE_HUE_RANGE.maxValue = (int) SmartDashboard.getNumber("Tote hue max", TOTE_HUE_RANGE.maxValue);
 				TOTE_SAT_RANGE.minValue = (int) SmartDashboard.getNumber("Tote sat min", TOTE_SAT_RANGE.minValue);
@@ -135,18 +105,18 @@ public class Robot extends SampleRobot {
 				TOTE_VAL_RANGE.maxValue = (int) SmartDashboard.getNumber("Tote val max", TOTE_VAL_RANGE.maxValue);
 
 				// Threshold the image looking for yellow (tote color)
-				NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.HSV, TOTE_HUE_RANGE,
-						TOTE_SAT_RANGE, TOTE_VAL_RANGE);
+				NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.HSV, TOTE_HUE_RANGE, TOTE_SAT_RANGE, TOTE_VAL_RANGE);
 
 				// Send particle count to dashboard
 				int numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
 				SmartDashboard.putNumber("Masked particles", numParticles);
 
 				// filter out small particles
+				// delete next two lines after finishing testing
 				float areaMin = (float) SmartDashboard.getNumber("Area min %", AREA_MINIMUM);
 				criteria[0].lower = areaMin;
 				imaqError = NIVision.imaqParticleFilter4(binaryFrame, binaryFrame, criteria, filterOptions, null);
-
+				
 				// Send particle count after filtering to dashboard
 				numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
 				SmartDashboard.putNumber("Filtered particles", numParticles);
@@ -165,26 +135,25 @@ public class Robot extends SampleRobot {
 						particles.add(par);
 						NIVision.imaqDrawShapeOnImage(binaryFrame, binaryFrame, new NIVision.Rect((int) par.BoundingRectTop, (int) par.BoundingRectLeft, (int) (360 - par.BoundingRectBottom - par.BoundingRectTop), (int) (640 - par.BoundingRectLeft - par.BoundingRectRight)), DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
 					}
+					// How does this sort the particles? We want to be sure it is actually finding the biggest one.
+					// Also even though it is very likely the biggest particle will always be the goal, it might be better to
+					// sort by something that would be specific to the goal. Also since we know the number of particles
+					// beforehand couldn't this be an array to make it faster, I know the array class has a method to sort things
 					particles.sort(null);
 
-					// This example only scores the largest particle. Extending
-					// to score all particles and choosing the desired one is
-					// left as an exercise
-					// for the reader. Note that this scores and reports
-					// information about a single particle (single L shaped
-					// target). To get accurate information
-					// about the location of the tote (not just the distance)
-					// you will need to correlate two adjacent targets in order
-					// to find the true center of the tote.
+					// This example only scores the largest particle. Extending to score all particles and choosing the
+					// desired one is left as an exercise for the reader. Note that this scores and reports information
+					// about a single particle (single L shaped target). To get accurate information about the location
+					// of the tote (not just the distance) you will need to correlate two adjacent targets in order to
+					// find the true center of the tote.
 					scores.Aspect = AspectScore(particles.get(0));
 					SmartDashboard.putNumber("Aspect", scores.Aspect);
 					scores.Area = AreaScore(particles.get(0));
 					SmartDashboard.putNumber("Area", scores.Area);
 					boolean isTote = scores.Aspect > SCORE_MIN && scores.Area > SCORE_MIN;
 
-					// Send distance and tote status to dashboard. The bounding
-					// rect, particularly the horizontal center (left - right)
-					// may be useful for rotating/driving towards a tote
+					// Send distance and tote status to dashboard. The bounding rect, particularly the
+					// horizontal center (left - right) may be useful for rotating/driving towards a tote
 					SmartDashboard.putBoolean("IsTote", isTote);
 					SmartDashboard.putNumber("Distance", computeDistance(binaryFrame, particles.get(0)));
 				} else {
@@ -193,15 +162,13 @@ public class Robot extends SampleRobot {
 				
 				// Send masked image to dashboard to assist in tweaking mask.
 				CameraServer.getInstance().setImage(binaryFrame);
-				
-				//CameraServer.getInstance().setImage(frame);
+				// CameraServer.getInstance().setImage(frame);
 			}
 		}
 		NIVision.IMAQdxStopAcquisition(session);
 	}
 
-	// Comparator function for sorting particles. Returns true if particle 1 is
-	// larger
+	// Comparator function for sorting particles. Returns true if particle 1 is larger
 	static boolean CompareParticleSizes(ParticleReport particle1, ParticleReport particle2) {
 		// we want descending sort order
 		return particle1.PercentAreaToImageArea > particle2.PercentAreaToImageArea;
@@ -213,15 +180,22 @@ public class Robot extends SampleRobot {
 	 * inputs outside the range 0-2
 	 */
 	double ratioToScore(double ratio) {
+		// Also why do we even have the score converted like this? Seems like it would be faster just to compare the raw values
+		// Could be problem that it doesn't work for inputs larger than 2 because if the goal appears more than twice as long
+		// than high then it will always just return 0 for the aspect score we should think about writing some of our own methods
+		// for scoring the particle.
+		// Also It seems like finding min is pointless because it will never be more than 100 for all values of ratio,
+		// so finding min of the two could be deleted
 		return (Math.max(0, Math.min(100 * (1 - Math.abs(1 - ratio)), 100)));
 	}
 
 	double AreaScore(ParticleReport report) {
-		double boundingArea = (report.BoundingRectBottom - report.BoundingRectTop)
-				* (report.BoundingRectRight - report.BoundingRectLeft);
-		// Tape is 7" edge so 49" bounding rect. With 2" wide tape it covers 24"
-		// of the rect.
+		double boundingArea = (report.BoundingRectBottom - report.BoundingRectTop) * (report.BoundingRectRight - report.BoundingRectLeft);
+		// Tape is 7" edge so 49" bounding rect. With 2" wide tape it covers 24" of the rect.
 		return ratioToScore((49 / 24) * report.Area / boundingArea);
+		// Possibly need to change above values of 49 and 24
+		// also the ratioToScore is a constant so it might be better to calculate that and have the constant in there
+		// that way the robot does less calculations
 	}
 
 	/**
@@ -229,8 +203,7 @@ public class Robot extends SampleRobot {
 	 * retro-reflective target. Target is 7"x7" so aspect should be 1
 	 */
 	double AspectScore(ParticleReport report) {
-		return ratioToScore(((report.BoundingRectRight - report.BoundingRectLeft)
-				/ (report.BoundingRectBottom - report.BoundingRectTop)));
+		return ratioToScore(((report.BoundingRectRight - report.BoundingRectLeft) / (report.BoundingRectBottom - report.BoundingRectTop)));
 	}
 
 	/**
@@ -254,9 +227,11 @@ public class Robot extends SampleRobot {
 		NIVision.GetImageSizeResult size;
 
 		size = NIVision.imaqGetImageSize(image);
-		normalizedWidth = 2 * (report.BoundingRectRight - report.BoundingRectLeft) / size.width;
+		// I don't understand what normalized width is supposed to do, it just seems like it will screw up the width of the particle
+		// like if right = 200, left = 0, width = 300, normalized width = 4/9, not 2/3!!!!!!
+		normalizedWidth = 2 * (report.BoundingRectRight - report.BoundingRectLeft) / size.width; // a constant, can be replaced/delete above code
 		targetWidth = 7;
-
+		// Need to change some of these values because they don't match up with the goal.
 		return targetWidth / (normalizedWidth * 12 * Math.tan(VIEW_ANGLE * Math.PI / (180 * 2)));
 	}
 
