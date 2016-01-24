@@ -64,7 +64,6 @@ public class Robot extends SampleRobot {
 	public Robot() {
 		/*controller = new Joystick(0);
 		DIO = new DigitalInput[8];
-		DIO = new DigitalInput[7];
 		for (int i = 0; i < 8; i++) DIO[i] = new DigitalInput(i);
 		encoder = new Encoder(8, 9);*/
 		
