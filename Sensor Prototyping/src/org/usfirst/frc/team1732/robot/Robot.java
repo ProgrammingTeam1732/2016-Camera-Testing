@@ -119,7 +119,7 @@ public class Robot extends SampleRobot {
 				int numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
 				SmartDashboard.putNumber("Masked particles", numParticles);
 
-				// filter out small particles
+				// filter out small particle
 				// delete next two lines after finishing testing
 				/*float ratioMin = (float) SmartDashboard.getNumber("Ratio min", RATIO_MIN);
 				float ratioMax = (float) SmartDashboard.getNumber("Ratio max", RATIO_MAX);
