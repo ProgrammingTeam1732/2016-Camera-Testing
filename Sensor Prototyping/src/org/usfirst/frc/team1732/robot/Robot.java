@@ -3,6 +3,9 @@ package org.usfirst.frc.team1732.robot;
 import java.util.ArrayList;
 import java.util.Comparator;
 
+import org.usfirst.frc.team1732.robot.Robot.ParticleReport;
+import org.usfirst.frc.team1732.robot.Robot.Scores;
+
 import com.ni.vision.NIVision;
 import com.ni.vision.NIVision.DrawMode;
 import com.ni.vision.NIVision.Image;
@@ -37,8 +40,7 @@ public class Robot extends SampleRobot {
 		public int compareTo(ParticleReport r) {return (int) (r.Area - this.Area);}
 		public int compare(ParticleReport r1, ParticleReport r2) {return (int) (r1.Area - r2.Area);}
 	};
-
-	// Structure to represent the scores for the various tests used for target identification
+	
 	public class Scores {
 		double Area;
 		double Aspect;
@@ -50,11 +52,13 @@ public class Robot extends SampleRobot {
 	int imaqError;
 
 	// Constants
-	NIVision.Range TOTE_HUE_RANGE = new NIVision.Range(58, 110); // Default hue range for goal
-	NIVision.Range TOTE_SAT_RANGE = new NIVision.Range(100, 200); // Default saturation range for goal
-	NIVision.Range TOTE_VAL_RANGE = new NIVision.Range(206, 255); // Default value range for goal
+	NIVision.Range GOAL_HUE_RANGE = new NIVision.Range(67, 82); // Default hue range for goal
+	NIVision.Range GOAL_SAT_RANGE = new NIVision.Range(95, 110); // Default saturation range for goal
+	NIVision.Range GOAL_VAL_RANGE = new NIVision.Range(243, 255); // Default value range for goal
 	double AREA_MINIMUM = 0.5; // Default Area minimum for particle as a percentage of total image area
-	double RATIO = 1.428; // Goal width = 20 in. / goal height = 12 in. = 1.428
+	double RATIO = 1.428571; // Goal width = 20 in. / goal height = 12 in. = 1.428
+	double RATIO_MIN = 1.328571; // Goal width = 20 in. / goal height = 12 in. = 1.428
+	double RATIO_MAX = 1.528571; // Goal width = 20 in. / goal height = 12 in. = 1.428
 	double SCORE_MIN = 75.0; // Minimum score to be considered a goal
 	double VIEW_ANGLE = 77.8; // View angle for camera, set to Axis m1011 by default, 64 for m1013, 51.7 for 206, 52 for HD3000 square, 60 for HD3000 640x480
 	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
@@ -64,7 +68,6 @@ public class Robot extends SampleRobot {
 	public Robot() {
 		/*controller = new Joystick(0);
 		DIO = new DigitalInput[8];
-		DIO = new DigitalInput[7];
 		for (int i = 0; i < 8; i++) DIO[i] = new DigitalInput(i);
 		encoder = new Encoder(8, 9);*/
 		
@@ -72,18 +75,23 @@ public class Robot extends SampleRobot {
 		binaryFrame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_U8, 0);
 
 		criteria[0] = new NIVision.ParticleFilterCriteria2(NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA, AREA_MINIMUM, 100.0, 0, 0);
-
+		//criteria[0] = new NIVision.ParticleFilterCriteria2(NIVision.MeasurementType.MT_RATIO_OF_EQUIVALENT_ELLIPSE_AXES, RATIO_MIN, RATIO_MAX, 0, 0);
+				
 		session = NIVision.IMAQdxOpenCamera("cam0", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
 		NIVision.IMAQdxConfigureGrab(session);
 		SmartDashboard.putBoolean("Capture?", false);
+		SmartDashboard.putBoolean("binaryFrame?", false);
+		SmartDashboard.putBoolean("Filter by area?", false);
 		// Put default values to SmartDashboard so fields will appear
-		SmartDashboard.putNumber("Tote hue min", TOTE_HUE_RANGE.minValue);
-		SmartDashboard.putNumber("Tote hue max", TOTE_HUE_RANGE.maxValue);
-		SmartDashboard.putNumber("Tote sat min", TOTE_SAT_RANGE.minValue);
-		SmartDashboard.putNumber("Tote sat max", TOTE_SAT_RANGE.maxValue);
-		SmartDashboard.putNumber("Tote val min", TOTE_VAL_RANGE.minValue);
-		SmartDashboard.putNumber("Tote val max", TOTE_VAL_RANGE.maxValue);
+		SmartDashboard.putNumber("Tote hue min", GOAL_HUE_RANGE.minValue);
+		SmartDashboard.putNumber("Tote hue max", GOAL_HUE_RANGE.maxValue);
+		SmartDashboard.putNumber("Tote sat min", GOAL_SAT_RANGE.minValue);
+		SmartDashboard.putNumber("Tote sat max", GOAL_SAT_RANGE.maxValue);
+		SmartDashboard.putNumber("Tote val min", GOAL_VAL_RANGE.minValue);
+		SmartDashboard.putNumber("Tote val max", GOAL_VAL_RANGE.maxValue);
 		SmartDashboard.putNumber("Area min %", AREA_MINIMUM);
+		//SmartDashboard.putNumber("Ratio min", RATIO_MIN);
+		//SmartDashboard.putNumber("Ratio max", RATIO_MAX);
 	}
 
 	public void operatorControl() {
@@ -93,19 +101,19 @@ public class Robot extends SampleRobot {
 			// SmartDashboard.putBoolean("Photosensor", DIO[0]()); // For the photosensor, if we need more just use for loop
 			// SmartDashboard.putNumber("Encoder Raw", encoder.getRaw()); // For the encoder
 			if (SmartDashboard.getBoolean("Capture?", false)) {
-				NIVision.IMAQdxGrab(session, frame, 1); // What happens if buffer wait is 0?
+				NIVision.IMAQdxGrab(session, frame, 1);
 
 				// Update threshold values from SmartDashboard. For performance reasons it is recommended to remove
 				// this after calibration is finished.
-				TOTE_HUE_RANGE.minValue = (int) SmartDashboard.getNumber("Tote hue min", TOTE_HUE_RANGE.minValue);
-				TOTE_HUE_RANGE.maxValue = (int) SmartDashboard.getNumber("Tote hue max", TOTE_HUE_RANGE.maxValue);
-				TOTE_SAT_RANGE.minValue = (int) SmartDashboard.getNumber("Tote sat min", TOTE_SAT_RANGE.minValue);
-				TOTE_SAT_RANGE.maxValue = (int) SmartDashboard.getNumber("Tote sat max", TOTE_SAT_RANGE.maxValue);
-				TOTE_VAL_RANGE.minValue = (int) SmartDashboard.getNumber("Tote val min", TOTE_VAL_RANGE.minValue);
-				TOTE_VAL_RANGE.maxValue = (int) SmartDashboard.getNumber("Tote val max", TOTE_VAL_RANGE.maxValue);
+				GOAL_HUE_RANGE.minValue = (int) SmartDashboard.getNumber("Tote hue min", GOAL_HUE_RANGE.minValue);
+				GOAL_HUE_RANGE.maxValue = (int) SmartDashboard.getNumber("Tote hue max", GOAL_HUE_RANGE.maxValue);
+				GOAL_SAT_RANGE.minValue = (int) SmartDashboard.getNumber("Tote sat min", GOAL_SAT_RANGE.minValue);
+				GOAL_SAT_RANGE.maxValue = (int) SmartDashboard.getNumber("Tote sat max", GOAL_SAT_RANGE.maxValue);
+				GOAL_VAL_RANGE.minValue = (int) SmartDashboard.getNumber("Tote val min", GOAL_VAL_RANGE.minValue);
+				GOAL_VAL_RANGE.maxValue = (int) SmartDashboard.getNumber("Tote val max", GOAL_VAL_RANGE.maxValue);
 
 				// Threshold the image looking for yellow (tote color)
-				NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.HSV, TOTE_HUE_RANGE, TOTE_SAT_RANGE, TOTE_VAL_RANGE);
+				NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.HSV, GOAL_HUE_RANGE, GOAL_SAT_RANGE, GOAL_VAL_RANGE);
 
 				// Send particle count to dashboard
 				int numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
@@ -113,9 +121,16 @@ public class Robot extends SampleRobot {
 
 				// filter out small particles
 				// delete next two lines after finishing testing
-				float areaMin = (float) SmartDashboard.getNumber("Area min %", AREA_MINIMUM);
-				criteria[0].lower = areaMin;
-				imaqError = NIVision.imaqParticleFilter4(binaryFrame, binaryFrame, criteria, filterOptions, null);
+				/*float ratioMin = (float) SmartDashboard.getNumber("Ratio min", RATIO_MIN);
+				float ratioMax = (float) SmartDashboard.getNumber("Ratio max", RATIO_MAX);
+				criteria[0].lower = ratioMin;
+				criteria[0].upper = ratioMax;
+				imaqError = NIVision.imaqParticleFilter4(binaryFrame, binaryFrame, criteria, filterOptions, null);*/
+				if (SmartDashboard.getBoolean("Filter by area?", false)) {
+					float areaMin = (float) SmartDashboard.getNumber("Area min %", AREA_MINIMUM);
+					criteria[0].lower = areaMin;
+					imaqError = NIVision.imaqParticleFilter4(binaryFrame, binaryFrame, criteria, filterOptions, null);
+				}
 				
 				// Send particle count after filtering to dashboard
 				numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
@@ -133,7 +148,6 @@ public class Robot extends SampleRobot {
 						par.BoundingRectBottom = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM);
 						par.BoundingRectRight = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT);
 						particles.add(par);
-						NIVision.imaqDrawShapeOnImage(binaryFrame, binaryFrame, new NIVision.Rect((int) par.BoundingRectTop, (int) par.BoundingRectLeft, (int) (360 - par.BoundingRectBottom - par.BoundingRectTop), (int) (640 - par.BoundingRectLeft - par.BoundingRectRight)), DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
 					}
 					// How does this sort the particles? We want to be sure it is actually finding the biggest one.
 					// Also even though it is very likely the biggest particle will always be the goal, it might be better to
@@ -150,19 +164,19 @@ public class Robot extends SampleRobot {
 					SmartDashboard.putNumber("Aspect", scores.Aspect);
 					scores.Area = AreaScore(particles.get(0));
 					SmartDashboard.putNumber("Area", scores.Area);
-					boolean isTote = scores.Aspect > SCORE_MIN && scores.Area > SCORE_MIN;
+					boolean isGoal = scores.Aspect > SCORE_MIN && scores.Area > SCORE_MIN;
 
 					// Send distance and tote status to dashboard. The bounding rect, particularly the
 					// horizontal center (left - right) may be useful for rotating/driving towards a tote
-					SmartDashboard.putBoolean("IsTote", isTote);
+					SmartDashboard.putBoolean("Is Goal?", isGoal);
 					SmartDashboard.putNumber("Distance", computeDistance(binaryFrame, particles.get(0)));
 				} else {
 					SmartDashboard.putBoolean("IsTote", false);
 				}
 				
 				// Send masked image to dashboard to assist in tweaking mask.
-				CameraServer.getInstance().setImage(binaryFrame);
-				// CameraServer.getInstance().setImage(frame);
+				if(SmartDashboard.getBoolean("binaryFrame?", false)) CameraServer.getInstance().setImage(binaryFrame);
+				else CameraServer.getInstance().setImage(frame);
 			}
 		}
 		NIVision.IMAQdxStopAcquisition(session);
