@@ -25,7 +25,6 @@ public class Robot extends SampleRobot {
 	DigitalInput[] DIO;
 	Encoder encoder;
 	Joystick controller;
-	
 	int session;
 
 	// A structure to hold measurements of a particle
