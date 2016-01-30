@@ -3,15 +3,14 @@ package org.usfirst.frc.team1732.robot;
 import java.util.ArrayList;
 import java.util.Comparator;
 
-import org.usfirst.frc.team1732.robot.Robot.ParticleReport;
-import org.usfirst.frc.team1732.robot.Robot.Scores;
-
 import com.ni.vision.NIVision;
-import com.ni.vision.NIVision.DrawMode;
 import com.ni.vision.NIVision.Image;
-import com.ni.vision.NIVision.ShapeMode;
 
-import edu.wpi.first.wpilibj.*;
+import edu.wpi.first.wpilibj.CameraServer;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.SampleRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 	
 /**
@@ -27,7 +26,7 @@ public class Robot extends SampleRobot {
 	Joystick controller;
 	int session;
 
-	// A structure to hold measurements of a particle
+	//* A structure to hold measurements of a particle
 	public class ParticleReport implements Comparator<ParticleReport>, Comparable<ParticleReport> {
 		double PercentAreaToImageArea;
 		double Area;
@@ -38,7 +37,7 @@ public class Robot extends SampleRobot {
 
 		public int compareTo(ParticleReport r) {return (int) (r.Area - this.Area);}
 		public int compare(ParticleReport r1, ParticleReport r2) {return (int) (r1.Area - r2.Area);}
-	};
+	};//*/
 	
 	public class Scores {
 		double Area;
