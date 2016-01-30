@@ -97,15 +97,7 @@ public class Robot extends SampleRobot {
 														NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT));
 						particles.add(par);
 					}
-					// How does this sort the particles? We want to be sure it is actually finding the biggest one.
-					// Also even though it is very likely the biggest particle will always be the goal, it might be better to
-					// sort by something that would be specific to the goal. Also since we know the number of particles
-					// beforehand couldn't this be an array to make it faster, I know the array class has a method to sort things
-					particles.sort(null);
-
-
-					// Send distance and tote status to dashboard. The bounding rect, particularly the
-					// horizontal center (left - right) may be useful for rotating/driving towards a tote
+					// particles.sort(null);
 				} else {
 					SmartDashboard.putBoolean("IsTote", false);
 				}
