@@ -13,12 +13,6 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SampleRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 	
-/**
- * This is a demo program showing the use of the CameraServer class. With start
- * automatic capture, there is no opportunity to process the image. Look at the
- * IntermediateVision sample for how to process the image before sending it to
- * the FRC PC Dashboard.
- */
 public class Robot extends SampleRobot {
 	
 	DigitalInput[] DIO;
@@ -47,7 +41,7 @@ public class Robot extends SampleRobot {
 	// Images
 	Image frame;
 	Image binaryFrame;
-	int imaqError;
+	int numberParticles;
 
 	// Constants
 	NIVision.Range GOAL_HUE_RANGE = new NIVision.Range(67, 82); // Default hue range for goal
@@ -64,10 +58,6 @@ public class Robot extends SampleRobot {
 	Scores scores = new Scores();
 
 	public Robot() {
-		/*controller = new Joystick(0);
-		DIO = new DigitalInput[8];
-		for (int i = 0; i < 8; i++) DIO[i] = new DigitalInput(i);
-		encoder = new Encoder(8, 9);*/
 		
 		frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
 		binaryFrame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_U8, 0);
@@ -127,12 +117,13 @@ public class Robot extends SampleRobot {
 				if (SmartDashboard.getBoolean("Filter by area?", false)) {
 					float areaMin = (float) SmartDashboard.getNumber("Area min %", AREA_MINIMUM);
 					criteria[0].lower = areaMin;
-					imaqError = NIVision.imaqParticleFilter4(binaryFrame, binaryFrame, criteria, filterOptions, null);
+					numberParticles = NIVision.imaqParticleFilter4(binaryFrame, binaryFrame, criteria, filterOptions, null);
 				}
 				
 				// Send particle count after filtering to dashboard
 				numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
 				SmartDashboard.putNumber("Filtered particles", numParticles);
+				SmartDashboard.putNumber("Number of particles from Filter Method", numberParticles);
 
 				if (numParticles > 0) {					
 					// Measure particles and sort by particle size
