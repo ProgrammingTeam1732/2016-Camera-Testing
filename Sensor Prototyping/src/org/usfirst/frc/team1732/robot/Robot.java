@@ -99,7 +99,7 @@ public class Robot extends SampleRobot {
 						particles.add(par);
 					}
 					
-					Collections.sort(particles);
+					Collections.sort(particles, Particle.ParticleComparator);
 					
 					SmartDashboard.putNumber("Left", particles.get(0).getLeft());
 					SmartDashboard.putNumber("Right", particles.get(0).getRight());
