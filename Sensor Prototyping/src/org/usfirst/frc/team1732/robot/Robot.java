@@ -1,6 +1,7 @@
 package org.usfirst.frc.team1732.robot;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import com.ni.vision.NIVision;
 import com.ni.vision.NIVision.Image;
@@ -97,6 +98,14 @@ public class Robot extends SampleRobot {
 														NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT));
 						particles.add(par);
 					}
+					
+					Collections.sort(particles);
+					
+					SmartDashboard.putNumber("Left", particles.get(0).getLeft());
+					SmartDashboard.putNumber("Right", particles.get(0).getRight());
+					SmartDashboard.putNumber("Top", particles.get(0).getTop());
+					SmartDashboard.putNumber("Bottom", particles.get(0).getBottom());
+					
 					// particles.sort(null);
 				} else {
 					SmartDashboard.putBoolean("IsTote", false);

@@ -1,6 +1,9 @@
 package org.usfirst.frc.team1732.robot;
 
-public class Particle {
+public class Particle implements Comparable {
+	
+	// Image width:  640
+	//		 height: 480
 	
 	private double left;
 	private double top;
@@ -14,20 +17,17 @@ public class Particle {
 		this.right = right;
 	}
 	
-	public double getLeft() {
-		return left;
-	}
+	public double getLeft() {return left;}
+	public double getRight() {return right;}
+	public double getTop() {return top;}
+	public double getBottom() {return bottom;}
 	
-	public double getRight() {
-		return right;
+	public double getArea() {
+		return (640-left-right)*(480-top-bottom);
 	}
-	
-	public double getTop() {
-		return top;
+
+	@Override
+	public int compareTo(Object par) {
+		return (int) ((this.getArea() - ((Particle) par).getArea()) * 100);
 	}
-	
-	public double getBottom() {
-		return bottom;
-	}
-	
 }
