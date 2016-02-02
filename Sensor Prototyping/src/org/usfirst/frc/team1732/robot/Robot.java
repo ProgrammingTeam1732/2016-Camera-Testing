@@ -30,10 +30,7 @@ public class Robot extends SampleRobot {
 	NIVision.Range GOAL_SAT_RANGE = new NIVision.Range(95, 110); // Default saturation range for goal
 	NIVision.Range GOAL_VAL_RANGE = new NIVision.Range(243, 255); // Default value range for goal
 	
-	double AREA_MINIMUM = 0.5; // Default Area minimum for particle as a percentage of total image area
 	double RATIO = 1.428571; // Goal width = 20 in. / goal height = 12 in. = 1.428
-	double RATIO_MIN = 1.328571; // Goal width = 20 in. / goal height = 12 in. = 1.428
-	double RATIO_MAX = 1.528571; // Goal width = 20 in. / goal height = 12 in. = 1.428
 	double SCORE_MIN = 75.0; // Minimum score to be considered a goal
 	double VIEW_ANGLE = 77.8; // View angle for camera, set to Axis m1011 by default, 64 for m1013, 51.7 for 206, 52 for HD3000 square, 60 for HD3000 640x480
 
@@ -54,7 +51,6 @@ public class Robot extends SampleRobot {
 		SmartDashboard.putNumber("Tote sat max", GOAL_SAT_RANGE.maxValue);
 		SmartDashboard.putNumber("Tote val min", GOAL_VAL_RANGE.minValue);
 		SmartDashboard.putNumber("Tote val max", GOAL_VAL_RANGE.maxValue);
-		SmartDashboard.putNumber("Area min %", AREA_MINIMUM);
 	}
 
 	public void operatorControl() {
@@ -90,23 +86,29 @@ public class Robot extends SampleRobot {
 
 				if (numParticles > 0) {					
 					// Measure particles and sort by particle size
-					ArrayList<Particle> particles = new ArrayList<Particle>();
+					// Finds 15 largest particles
+					ArrayList<Particle> largest = new ArrayList<Particle>(15); // Change size to change how many particles to remember
 					for (int particleIndex = 0; particleIndex < numParticles; particleIndex++) {
-						Particle par = new Particle(	NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP),
-														NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT),
-														NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM),
-														NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT));
-						particles.add(par);
+						Particle par = new Particle(NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP),
+													NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT),
+													NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM),
+													NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT));
+						sortParticles(par, largest, 0); // not sure if this will be better than old method or not
 					}
+					// Finds which of the 15 largest particles has the closest aspect ratio to the goal
+					Particle bestPar = largest.get(0);
+					for (int i = 1; i < largest.size(); i++) {
+						if (Math.abs(RATIO - largest.get(i).getAspect()) < Math.abs(RATIO - bestPar.getAspect())) {
+							bestPar = largest.get(i);
+						}
+					}
+					//Collections.sort(particles, Particle.ParticleComparator);
+					SmartDashboard.putNumber("Area", bestPar.getArea());
+					SmartDashboard.putNumber("Left", bestPar.getLeft()/640.0);
+					SmartDashboard.putNumber("Right", bestPar.getRight()/640.0);
+					SmartDashboard.putNumber("Top", bestPar.getTop()/480.0);
+					SmartDashboard.putNumber("Bottom", bestPar.getBottom()/480.0);
 					
-					Collections.sort(particles, Particle.ParticleComparator);
-					
-					SmartDashboard.putNumber("Left", particles.get(0).getLeft());
-					SmartDashboard.putNumber("Right", particles.get(0).getRight());
-					SmartDashboard.putNumber("Top", particles.get(0).getTop());
-					SmartDashboard.putNumber("Bottom", particles.get(0).getBottom());
-					
-					// particles.sort(null);
 				} else {
 					SmartDashboard.putBoolean("IsTote", false);
 				}
@@ -118,6 +120,23 @@ public class Robot extends SampleRobot {
 		}
 		NIVision.IMAQdxStopAcquisition(session);
 	}
+	
+	public static void sortParticles(Particle par, ArrayList<Particle> largest, int j) {
+		double temp = par.getArea();
+		if (temp < 5) return; // Increase minimum area to increase performance (won't waste time on smaller particles)
+		for (int i = j; i < largest.size(); i++) {
+			if (largest.get(i)== null) {
+				largest.set(i, par);
+				return;
+			}
+			if (temp > largest.get(i).getArea()) {
+				sortParticles(largest.get(i), largest, i+1);
+				largest.set(i, par);
+				return;
+			}
+		}
+	} // Simple method that finds the particles with the highest areas
+	// No need to worry about what happens if the original size is filled up- there are only set methods, not add methods used
 
 	/* Comparator function for sorting particles. Returns true if particle 1 is larger
 	static boolean CompareParticleSizes(ParticleReport particle1, ParticleReport particle2) {

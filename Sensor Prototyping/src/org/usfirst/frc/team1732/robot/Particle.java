@@ -33,6 +33,10 @@ public class Particle implements Comparable {
 	public double getArea() {
 		return (right-left)*(bottom-top);
 	}
+	
+	public double getAspect() {
+		return (right-left)/(bottom-top);
+	}
 
 	@Override
 	public int compareTo(Object par) {
