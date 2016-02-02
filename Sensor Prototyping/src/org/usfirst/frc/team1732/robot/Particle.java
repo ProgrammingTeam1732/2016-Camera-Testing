@@ -2,7 +2,7 @@ package org.usfirst.frc.team1732.robot;
 
 import java.util.Comparator;
 
-public class Particle implements Comparable {
+public class Particle implements Comparable<Particle> {
 	
 	// Image width:  640
 	//		 height: 480
@@ -38,8 +38,8 @@ public class Particle implements Comparable {
 		return (right-left)/(bottom-top);
 	}
 
-	@Override
-	public int compareTo(Object par) {
+	public int compareTo(Particle par) {
 		return (int) (((Particle) par).getArea() - (this.getArea()) * 100);
 	}
+
 }
