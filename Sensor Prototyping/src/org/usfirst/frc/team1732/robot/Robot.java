@@ -31,6 +31,8 @@ public class Robot extends SampleRobot {
 	NIVision.Range GOAL_VAL_RANGE = new NIVision.Range(243, 255); // Default value range for goal
 	
 	double RATIO = 1.428571; // Goal width = 20 in. / goal height = 12 in. = 1.428
+	double RATIO_MIN = 1.228571; // Goal width = 20 in. / goal height = 12 in. = 1.428
+	double RATIO_MAX = 1.628571; // Goal width = 20 in. / goal height = 12 in. = 1.428
 	double SCORE_MIN = 75.0; // Minimum score to be considered a goal
 	double VIEW_ANGLE = 77.8; // View angle for camera, set to Axis m1011 by default, 64 for m1013, 51.7 for 206, 52 for HD3000 square, 60 for HD3000 640x480
 
@@ -93,7 +95,11 @@ public class Robot extends SampleRobot {
 													NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT),
 													NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM),
 													NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT));
-						sortParticles(par, largest, 0); // not sure if this will be better than old method or not
+						double temp = par.getAspect();
+						if (par.getArea() > 16 && temp < RATIO_MAX && temp > RATIO_MIN) {
+							sortParticles(par, largest); // not sure if this will be better than old method or not
+						}
+						// Increase min area and decrease range of ratios to increase speed
 					}
 					// Finds which of the 15 largest particles has the closest aspect ratio to the goal
 					Particle bestPar = largest.get(0);
@@ -121,18 +127,16 @@ public class Robot extends SampleRobot {
 		NIVision.IMAQdxStopAcquisition(session);
 	}
 	
-	public static void sortParticles(Particle par, ArrayList<Particle> largest, int j) {
-		double temp = par.getArea();
-		if (temp < 5) return; // Increase minimum area to increase performance (won't waste time on smaller particles)
-		for (int i = j; i < largest.size(); i++) {
+	public static void sortParticles(Particle par, ArrayList<Particle> largest) {
+		for (int i = 0; i < largest.size(); i++) {
 			if (largest.get(i)== null) {
 				largest.set(i, par);
 				return;
 			}
-			if (temp > largest.get(i).getArea()) {
-				sortParticles(largest.get(i), largest, i+1);
+			if (par.getArea() > largest.get(i).getArea()) {
+				Particle particle = largest.get(i);
 				largest.set(i, par);
-				return;
+				par = particle;
 			}
 		}
 	} // Simple method that finds the particles with the highest areas
