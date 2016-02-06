@@ -94,7 +94,7 @@ public class Robot extends SampleRobot {
 				if (numParticles > 0) {					
 					// Measure particles and sort by particle size
 					// Finds 15 largest particles
-					RATIO_MIN = SmartDashboard.getNumber("Goal aspect min", RATIO_MIN);
+					/*RATIO_MIN = SmartDashboard.getNumber("Goal aspect min", RATIO_MIN);
 					RATIO_MAX = SmartDashboard.getNumber("Goal aspect max", RATIO_MAX);
 					AREA = SmartDashboard.getNumber("Particle area min", AREA);
 					ArrayList<Particle> largest = new ArrayList<Particle>(15); // Change size to change how many particles to remember
@@ -117,13 +117,26 @@ public class Robot extends SampleRobot {
 							bestPar = largest.get(i);
 						}
 					}
-					//Collections.sort(particles, Particle.ParticleComparator);
 					SmartDashboard.putNumber("Area", bestPar.getArea());
 					SmartDashboard.putNumber("Left", bestPar.getLeft()/640.0);
 					SmartDashboard.putNumber("Right", bestPar.getRight()/640.0);
 					SmartDashboard.putNumber("Top", bestPar.getTop()/480.0);
-					SmartDashboard.putNumber("Bottom", bestPar.getBottom()/480.0);
+					SmartDashboard.putNumber("Bottom", bestPar.getBottom()/480.0);*/
+					ArrayList<Particle> particles = new ArrayList<Particle>();
+					for (int particleIndex = 0; particleIndex < numParticles; particleIndex++) {
+						Particle par = new Particle(	NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP),
+														NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT),
+														NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM),
+														NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT));
+						particles.add(par);
+					}
 					
+					Collections.sort(particles, Particle.ParticleComparator);
+					
+					SmartDashboard.putNumber("Left", particles.get(0).getLeft()/640.0);
+					SmartDashboard.putNumber("Right", particles.get(0).getRight()/640.0);
+					SmartDashboard.putNumber("Top", particles.get(0).getTop()/480.0);
+					SmartDashboard.putNumber("Bottom", particles.get(0).getBottom()/480.0);
 				} else {
 					SmartDashboard.putBoolean("IsGoal", false);
 				}
