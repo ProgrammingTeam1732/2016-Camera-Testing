@@ -85,16 +85,11 @@ public class Robot extends SampleRobot {
 				// Send particle count to dashboard
 				int numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
 				SmartDashboard.putNumber("Masked particles", numParticles);
-				
-				// Send particle count after filtering to dashboard
-				numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
-				SmartDashboard.putNumber("Filtered particles", numParticles);
-				SmartDashboard.putNumber("Number of particles from Filter Method", numberParticles);
 
 				if (numParticles > 0) {					
 					// Measure particles and sort by particle size
 					// Finds 15 largest particles
-					/*RATIO_MIN = SmartDashboard.getNumber("Goal aspect min", RATIO_MIN);
+					RATIO_MIN = SmartDashboard.getNumber("Goal aspect min", RATIO_MIN);
 					RATIO_MAX = SmartDashboard.getNumber("Goal aspect max", RATIO_MAX);
 					AREA = SmartDashboard.getNumber("Particle area min", AREA);
 					ArrayList<Particle> largest = new ArrayList<Particle>(15); // Change size to change how many particles to remember
@@ -105,24 +100,27 @@ public class Robot extends SampleRobot {
 													NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT));
 						double temp = par.getAspect();
 						if (par.getArea() > AREA && temp < RATIO_MAX && temp > RATIO_MIN) {
+							System.out.println("Partcle accepted");
+							largest.add(par);
 							sortParticles(par, largest); // not sure if this will be faster than old/other methods or not, but I'm fairly sure it will work.
 						}
 						// Increase min area and decrease range of ratios to increase speed
 					}
 					// Finds which of the 15 largest particles has the closest aspect ratio to the goal
-					largest.removeAll(Collections.singleton(null));
-					Particle bestPar = largest.get(0);
-					for (int i = 1; i < largest.size(); i++) {
-						if (Math.abs(RATIO - largest.get(i).getAspect()) < Math.abs(RATIO - bestPar.getAspect())) {
-							bestPar = largest.get(i);
+					for(int j = 0; j < largest.size(); j++) if(largest.get(j) == null) largest.remove(j);
+					SmartDashboard.putNumber("Filtered particles", largest.size());
+					if(largest.size() > 0) {
+						Particle bestPar = largest.get(0);
+						for (int i = 1; i < largest.size(); i++) {
+							if (Math.abs(RATIO - largest.get(i).getAspect()) < Math.abs(RATIO - bestPar.getAspect())) bestPar = largest.get(i);
 						}
+						SmartDashboard.putNumber("Area", bestPar.getArea());
+						SmartDashboard.putNumber("Left", bestPar.getLeft()/640.0);
+						SmartDashboard.putNumber("Right", bestPar.getRight()/640.0);
+						SmartDashboard.putNumber("Top", bestPar.getTop()/480.0);
+						SmartDashboard.putNumber("Bottom", bestPar.getBottom()/480.0);
 					}
-					SmartDashboard.putNumber("Area", bestPar.getArea());
-					SmartDashboard.putNumber("Left", bestPar.getLeft()/640.0);
-					SmartDashboard.putNumber("Right", bestPar.getRight()/640.0);
-					SmartDashboard.putNumber("Top", bestPar.getTop()/480.0);
-					SmartDashboard.putNumber("Bottom", bestPar.getBottom()/480.0);*/
-					ArrayList<Particle> particles = new ArrayList<Particle>();
+					/*ArrayList<Particle> particles = new ArrayList<Particle>();
 					for (int particleIndex = 0; particleIndex < numParticles; particleIndex++) {
 						Particle par = new Particle(	NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP),
 														NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT),
@@ -136,7 +134,7 @@ public class Robot extends SampleRobot {
 					SmartDashboard.putNumber("Left", particles.get(0).getLeft()/640.0);
 					SmartDashboard.putNumber("Right", particles.get(0).getRight()/640.0);
 					SmartDashboard.putNumber("Top", particles.get(0).getTop()/480.0);
-					SmartDashboard.putNumber("Bottom", particles.get(0).getBottom()/480.0);
+					SmartDashboard.putNumber("Bottom", particles.get(0).getBottom()/480.0);*/
 				} else {
 					SmartDashboard.putBoolean("IsGoal", false);
 				}

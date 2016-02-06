@@ -31,11 +31,11 @@ public class Particle implements Comparable<Particle> {
 	public double getBottom() {return bottom;}
 	
 	public double getArea() {
-		return (right-left)*(bottom-top);
+		return Math.abs((right-left)*(bottom-top));
 	}
 	
 	public double getAspect() {
-		return (right-left)/(bottom-top);
+		return (Math.abs(right-left))/(Math.abs(bottom-top));
 	}
 
 	public int compareTo(Particle par) {
