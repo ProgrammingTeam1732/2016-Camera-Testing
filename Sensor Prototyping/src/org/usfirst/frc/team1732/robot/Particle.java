@@ -41,5 +41,13 @@ public class Particle implements Comparable<Particle> {
 	public int compareTo(Particle par) {
 		return (int) (((Particle) par).getArea() - (this.getArea()) * 100);
 	}
+	
+	public double getDistance() {
+		return ((640/Math.abs(right-left))*20)/(Math.tan(0.679));
+	}
+	
+	public double getDirection() {
+		return (320-(right+left)/2);
+	}
 
 }

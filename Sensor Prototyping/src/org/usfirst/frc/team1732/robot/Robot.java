@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import com.ni.vision.NIVision;
 import com.ni.vision.NIVision.Image;
 
+import edu.wpi.first.wpilibj.CANTalon;
 import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.SampleRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -16,10 +17,13 @@ public class Robot extends SampleRobot {
 	Image binaryFrame;
 	int numberParticles;
 	int session;
+	
+	CANTalon left[] = new CANTalon[3];
+	CANTalon right[] = new CANTalon[3];
 
 	// Constants
-	NIVision.Range GOAL_HUE_RANGE = new NIVision.Range(67, 82); // Default hue range for goal
-	NIVision.Range GOAL_SAT_RANGE = new NIVision.Range(95, 110); // Default saturation range for goal
+	NIVision.Range GOAL_HUE_RANGE = new NIVision.Range(100, 130); // Default hue range for goal
+	NIVision.Range GOAL_SAT_RANGE = new NIVision.Range(0, 255); // Default saturation range for goal
 	NIVision.Range GOAL_VAL_RANGE = new NIVision.Range(243, 255); // Default value range for goal
 	
 	double AREA = 16;
@@ -32,6 +36,9 @@ public class Robot extends SampleRobot {
 	
 	public Robot() {
 		
+		left[0] = new CANTalon(11); left[1] = new CANTalon(22); left[2] = new CANTalon(21);
+		right[0] = new CANTalon(14); right[1] = new CANTalon(1); right[2] = new CANTalon(13);
+		
 		frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
 		binaryFrame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_U8, 0);
 				
@@ -40,7 +47,6 @@ public class Robot extends SampleRobot {
 		
 		SmartDashboard.putBoolean("Capture?", false);
 		SmartDashboard.putBoolean("binaryFrame?", false);
-		SmartDashboard.putBoolean("Filter by area?", false);
 
 		SmartDashboard.putNumber("Goal hue min", GOAL_HUE_RANGE.minValue);
 		SmartDashboard.putNumber("Goal hue max", GOAL_HUE_RANGE.maxValue);
@@ -98,15 +104,14 @@ public class Robot extends SampleRobot {
 													NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM),
 													NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT));
 						
-						double temp = par.getAspect();
+						// double temp = par.getAspect();
 						
-						if (par.getArea() > AREA && temp < RATIO_MAX && temp > RATIO_MIN) {
-							sortParticles(par, qualifyingParticles); // not sure if this will be faster than old/other methods or not, but I'm fairly sure it will work.
-							if (qualifyingParticles.size() > particleLimit) qualifyingParticles.remove(qualifyingParticles.size() - 1);
+						if (par.getArea() > AREA /* && temp < RATIO_MAX && temp > RATIO_MIN */) {
+							qualifyingParticles.add(par);
+							
+							//if (qualifyingParticles.size() > particleLimit) qualifyingParticles.remove(qualifyingParticles.size() - 1);
 						}
 					}
-					for(int j = 0; j < qualifyingParticles.size(); j++) 
-						if(qualifyingParticles.get(j) == null) qualifyingParticles.remove(j);
 					
 					SmartDashboard.putNumber("Filtered particles", qualifyingParticles.size());
 					
@@ -122,25 +127,9 @@ public class Robot extends SampleRobot {
 						SmartDashboard.putNumber("Right", bestPar.getRight()/640.0);
 						SmartDashboard.putNumber("Top", bestPar.getTop()/480.0);
 						SmartDashboard.putNumber("Bottom", bestPar.getBottom()/480.0);
+						SmartDashboard.putNumber("Distance",  bestPar.getDistance());
+						if (SmartDashboard.getBoolean("do Aim?", false)) turn(bestPar);
 					}
-					
-					/*ArrayList<Particle> particles = new ArrayList<Particle>();
-					for (int particleIndex = 0; particleIndex < numParticles; particleIndex++) {
-						Particle par = new Particle(	NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP),
-														NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT),
-														NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM),
-														NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT));
-						particles.add(par);
-					}
-					
-					Collections.sort(particles, Particle.ParticleComparator);
-					
-					SmartDashboard.putNumber("Left", particles.get(0).getLeft()/640.0);
-					SmartDashboard.putNumber("Right", particles.get(0).getRight()/640.0);
-					SmartDashboard.putNumber("Top", particles.get(0).getTop()/480.0);
-					SmartDashboard.putNumber("Bottom", particles.get(0).getBottom()/480.0);*/
-				} else {
-					SmartDashboard.putBoolean("IsGoal", false);
 				}
 				
 				// Send masked image to dashboard to assist in tweaking mask.
@@ -151,13 +140,24 @@ public class Robot extends SampleRobot {
 		NIVision.IMAQdxStopAcquisition(session);
 	}
 	
-	public static void sortParticles(Particle newPar, ArrayList<Particle> qualifyingParticles) {
+	public void setMotors(double l, double r) {
+		left[0].set(l); left[1].set(l); left[2].set(l); 
+		right[0].set(r); right[1].set(r); right[2].set(r); 
+	}
+	
+	public void turn(Particle par) {
+		SmartDashboard.putNumber("Direction", par.getDistance());
+		if (par.getDirection() < 0) setMotors(0.3, 0.3);
+		if (par.getDirection() > 0) setMotors(-0.3, -0.3);
+	}
+	
+	
+	/*public static int sortParticles(Particle newPar, ArrayList<Particle> qualifyingParticles) {
 		for (int i = 0; i < qualifyingParticles.size(); i++) {
 			if (newPar.getArea() > qualifyingParticles.get(i).getArea()) {
-				qualifyingParticles.add(i, newPar);
-				return;
+				return i;
 			}
-		}
+		} return -1;
 	}
 	
 	// Simple method that finds the particles with the highest areas
