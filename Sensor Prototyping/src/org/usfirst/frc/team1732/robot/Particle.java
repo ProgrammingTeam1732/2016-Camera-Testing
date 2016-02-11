@@ -47,7 +47,7 @@ public class Particle implements Comparable<Particle> {
 	}
 	
 	public double getDirection() {
-		return (320-(right+left)/2);
+		return (right+left)/1280;
 	}
 
 }

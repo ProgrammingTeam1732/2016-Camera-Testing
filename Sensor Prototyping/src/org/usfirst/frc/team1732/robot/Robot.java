@@ -18,15 +18,15 @@ public class Robot extends SampleRobot {
 	int numberParticles;
 	int session;
 	
-	CANTalon left[] = new CANTalon[3];
-	CANTalon right[] = new CANTalon[3];
+	CANTalon left1; CANTalon left2; CANTalon left3;
+	CANTalon right1; CANTalon right2; CANTalon right3;
 
 	// Constants
 	NIVision.Range GOAL_HUE_RANGE = new NIVision.Range(100, 130); // Default hue range for goal
-	NIVision.Range GOAL_SAT_RANGE = new NIVision.Range(0, 255); // Default saturation range for goal
+	NIVision.Range GOAL_SAT_RANGE = new NIVision.Range(200, 255); // Default saturation range for goal
 	NIVision.Range GOAL_VAL_RANGE = new NIVision.Range(243, 255); // Default value range for goal
 	
-	double AREA = 16;
+	double AREA = 100;
 	double RATIO = 1.428571; // Goal width = 20 in. / goal height = 12 in. = 1.428
 	double RATIO_MIN = 1.228571; // Goal width = 20 in. / goal height = 12 in. = 1.428
 	double RATIO_MAX = 1.628571; // Goal width = 20 in. / goal height = 12 in. = 1.428
@@ -36,8 +36,8 @@ public class Robot extends SampleRobot {
 	
 	public Robot() {
 		
-		left[0] = new CANTalon(11); left[1] = new CANTalon(22); left[2] = new CANTalon(21);
-		right[0] = new CANTalon(14); right[1] = new CANTalon(1); right[2] = new CANTalon(13);
+		left1 = new CANTalon(11); left2 = new CANTalon(21); left3 = new CANTalon(22);
+		right1 = new CANTalon(14); right2 = new CANTalon(12); right3 = new CANTalon(13);
 		
 		frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
 		binaryFrame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_U8, 0);
@@ -59,7 +59,12 @@ public class Robot extends SampleRobot {
 		SmartDashboard.putNumber("Goal aspect max", RATIO_MAX);
 		SmartDashboard.putNumber("Particle area min", AREA);
 		
+		SmartDashboard.putNumber("Direction", 0);
+		SmartDashboard.putBoolean("do Aim?", false);
+		
 		SmartDashboard.putNumber("Particle Limit", particleLimit);
+		
+		CameraServer.getInstance().setQuality(25);
 	}
 
 	public void operatorControl() {
@@ -128,7 +133,9 @@ public class Robot extends SampleRobot {
 						SmartDashboard.putNumber("Top", bestPar.getTop()/480.0);
 						SmartDashboard.putNumber("Bottom", bestPar.getBottom()/480.0);
 						SmartDashboard.putNumber("Distance",  bestPar.getDistance());
+						SmartDashboard.putNumber("Direction", bestPar.getDirection());
 						if (SmartDashboard.getBoolean("do Aim?", false)) turn(bestPar);
+						else setMotors(0,0);
 					}
 				}
 				
@@ -141,14 +148,17 @@ public class Robot extends SampleRobot {
 	}
 	
 	public void setMotors(double l, double r) {
-		left[0].set(l); left[1].set(l); left[2].set(l); 
-		right[0].set(r); right[1].set(r); right[2].set(r); 
+		left1.set(l); left2.set(l); left3.set(-l); 
+		right1.set(r); right2.set(r); right3.set(-r);
 	}
 	
 	public void turn(Particle par) {
-		SmartDashboard.putNumber("Direction", par.getDistance());
-		if (par.getDirection() < 0) setMotors(0.3, 0.3);
-		if (par.getDirection() > 0) setMotors(-0.3, -0.3);
+		double dir = par.getDirection();
+		setMotors((dir - 0.5) / 2.0, (dir - 0.5) / 2.0);
+		
+		//if (par.getDirection() < .4) setMotors(-0.13, -0.13);
+		//else if (par.getDirection() > .6) setMotors(0.13, 0.13);
+		//else setMotors(0,0);
 	}
 	
 	
