@@ -36,7 +36,7 @@ public class Robot extends SampleRobot {
 	int particleLimit = 10;
 	
 	public Robot() {
-		
+		direction = 0;
 		left1 = new CANTalon(11); left2 = new CANTalon(21); left3 = new CANTalon(22);
 		right1 = new CANTalon(14); right2 = new CANTalon(12); right3 = new CANTalon(13);
 		
