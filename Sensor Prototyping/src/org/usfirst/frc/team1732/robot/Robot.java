@@ -29,14 +29,17 @@ public class Robot extends SampleRobot {
 	
 	double AREA = 100;
 	double RATIO = 1.428571; // Goal width = 20 in. / goal height = 12 in. = 1.428
-	double RATIO_MIN = 1; // goal width = 20 in. / goal height = 12 in. = 1.428
-	double RATIO_MAX = 2; // Goal width = 20 in. / goal height = 12 in. = 1.428
+	double RATIO_MIN = 1.2; // goal width = 20 in. / goal height = 12 in. = 1.428
+	double RATIO_MAX = 1.6; // Goal width = 20 in. / goal height = 12 in. = 1.428
 	double SCORE_MIN = 75.0; // Minimum score to be considered a goal
 	double VIEW_ANGLE = 77.8; // View angle for camera, set to Axis m1011 by default, 64 for m1013, 51.7 for 206, 52 for HD3000 square, 60 for HD3000 640x480
 	int particleLimit = 10;
 	
+	double min_speed = 0.2;
+	double max_speed = 0.5;
+	
 	public Robot() {
-		direction = 0;
+		direction = 0.5;
 		left1 = new CANTalon(11); left2 = new CANTalon(21); left3 = new CANTalon(22);
 		right1 = new CANTalon(14); right2 = new CANTalon(12); right3 = new CANTalon(13);
 		
@@ -64,6 +67,8 @@ public class Robot extends SampleRobot {
 		SmartDashboard.putBoolean("do Aim?", false);
 		
 		SmartDashboard.putNumber("Particle Limit", particleLimit);
+		SmartDashboard.putNumber("Max Speed", max_speed);
+		SmartDashboard.putNumber("Min Speed", min_speed);
 		
 		CameraServer.getInstance().setQuality(25);
 	}
@@ -86,11 +91,17 @@ public class Robot extends SampleRobot {
 				GOAL_SAT_RANGE.maxValue = (int) SmartDashboard.getNumber("Goal sat max", GOAL_SAT_RANGE.maxValue);
 				GOAL_VAL_RANGE.minValue = (int) SmartDashboard.getNumber("Goal val min", GOAL_VAL_RANGE.minValue);
 				GOAL_VAL_RANGE.maxValue = (int) SmartDashboard.getNumber("Goal val max", GOAL_VAL_RANGE.maxValue);
+				min_speed = SmartDashboard.getNumber("Min Speed");
+				max_speed = SmartDashboard.getNumber("Max Speed");
+				RATIO_MIN = SmartDashboard.getNumber("Goal aspect min",   RATIO_MIN);
+				RATIO_MAX = SmartDashboard.getNumber("Goal aspect max",   RATIO_MAX);
+				AREA      = SmartDashboard.getNumber("Particle area min", AREA);
+
 				
 				particleLimit = (int) SmartDashboard.getNumber("Particle Limit", particleLimit);
 
 				// Threshold the image looking for yellow (Goal color)
-				NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.HSV, GOAL_HUE_RANGE, GOAL_SAT_RANGE, GOAL_VAL_RANGE);
+				NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.HSL, GOAL_HUE_RANGE, GOAL_SAT_RANGE, GOAL_VAL_RANGE);
 
 				// Send particle count to dashboard
 				int numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
@@ -99,9 +110,6 @@ public class Robot extends SampleRobot {
 				if (numParticles > 0) {					
 					// Measure particles and sort by particle size
 					// Finds 15 largest particles
-					RATIO_MIN = SmartDashboard.getNumber("Goal aspect min",   RATIO_MIN);
-					RATIO_MAX = SmartDashboard.getNumber("Goal aspect max",   RATIO_MAX);
-					AREA      = SmartDashboard.getNumber("Particle area min", AREA);
 					
 					ArrayList<Particle> qualifyingParticles = new ArrayList<Particle>();
 					for (int particleIndex = 0; particleIndex < numParticles; particleIndex++) {
@@ -133,6 +141,7 @@ public class Robot extends SampleRobot {
 						SmartDashboard.putNumber("Right", bestPar.getRight()/640.0);
 						SmartDashboard.putNumber("Top", bestPar.getTop()/480.0);
 						SmartDashboard.putNumber("Bottom", bestPar.getBottom()/480.0);
+						SmartDashboard.putNumber("Aspect", bestPar.getAspect());
 						SmartDashboard.putNumber("Distance",  bestPar.getDistance());
 						SmartDashboard.putNumber("Direction", direction);
 						if (SmartDashboard.getBoolean("do Aim?", false)) turn(direction);
@@ -158,13 +167,17 @@ public class Robot extends SampleRobot {
 		right1.set(r); right2.set(r); right3.set(-r);
 	}
 	
+	public double limit(double picasso) {
+		return (picasso > 0 ? 1 : -1) * (Math.abs(picasso) < min_speed ? min_speed : (Math.abs(picasso) > max_speed ? max_speed : Math.abs(picasso)));
+	}
+	
 	public void turn(double dir) {
 		//double dir = par.getDirection();
-		//setMotors((dir - 0.5) / 2.0, (dir - 0.5) / 2.0);
+		setMotors(limit((dir - 0.5) / 2.0), limit((dir - 0.5) / 2.0));
 		
-		if (dir < .4) setMotors(-0.13, -0.13);
-		else if (dir > .6) setMotors(0.13, 0.13);
-		else setMotors(0,0);
+		//if (dir < .4) setMotors(-0.13, -0.13);
+		//else if (dir > .6) setMotors(0.13, 0.13);
+		//else setMotors(0,0);
 	}
 	
 	
