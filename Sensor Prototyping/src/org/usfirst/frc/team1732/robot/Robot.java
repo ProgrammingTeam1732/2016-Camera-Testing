@@ -25,9 +25,9 @@ public class Robot extends SampleRobot {
 	CANTalon right1; CANTalon right2; CANTalon right3;
 
 	// Constants
-	NIVision.Range GOAL_HUE_RANGE = new NIVision.Range(100, 130); // Default hue range for goal
+	NIVision.Range GOAL_HUE_RANGE = new NIVision.Range(110, 130); // Default hue range for goal
 	NIVision.Range GOAL_SAT_RANGE = new NIVision.Range(200, 255); // Default saturation range for goal
-	NIVision.Range GOAL_VAL_RANGE = new NIVision.Range(243, 255); // Default value range for goal
+	NIVision.Range GOAL_VAL_RANGE = new NIVision.Range(270, 255); // Default value range for goal
 	
 	double AREA = 100;
 	double RATIO = 1.428571; // Goal width = 20 in. / goal height = 12 in. = 1.428
@@ -143,11 +143,11 @@ public class Robot extends SampleRobot {
 						SmartDashboard.putNumber("Aspect", bestPar.getAspect());
 						SmartDashboard.putNumber("Distance",  bestPar.getDistance());
 						SmartDashboard.putNumber("Direction", direction);
-						if (SmartDashboard.getBoolean("do Aim?", false)) turn(direction);
+						if (SmartDashboard.getBoolean("do Aim?", false)) turn(direction, bestPar.getDistance());
 						else setMotors(0,0);
 					}
 					else {
-						if (SmartDashboard.getBoolean("do Aim?", false)) turn(direction);
+						if (SmartDashboard.getBoolean("do Aim?", false)) turn(direction, 100000000);
 						else setMotors(0,0);
 					}
 					
@@ -158,7 +158,6 @@ public class Robot extends SampleRobot {
 				else CameraServer.getInstance().setImage(frame);
 			}
 		}
-		NIVision.IMAQdxStopAcquisition(session);
 	}
 	
 	public void setMotors(double l, double r) {
@@ -170,9 +169,14 @@ public class Robot extends SampleRobot {
 		return (picasso > 0 ? 1 : -1) * (Math.abs(picasso) < min_speed ? min_speed : (Math.abs(picasso) > max_speed ? max_speed : Math.abs(picasso)));
 	}
 	
-	public void turn(double dir) {
+	public void turn(double dir, double dist) {
 		//double dir = par.getDirection();
-		setMotors(limit((dir - 0.5) / 2.0), limit((dir - 0.5) / 2.0));
+		if (Math.abs(dir - 0.5) < 0.2) {
+			setMotors((dist-200)/10.0, (dist-200)/10.0);
+		} else {
+			setMotors(limit((dir - 0.5) / 2.0), limit((dir - 0.5) / 2.0));
+		}
+		
 		
 		//if (dir < .4) setMotors(-0.13, -0.13);
 		//else if (dir > .6) setMotors(0.13, 0.13);
