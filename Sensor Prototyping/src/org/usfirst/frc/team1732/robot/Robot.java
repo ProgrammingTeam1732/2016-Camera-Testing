@@ -21,6 +21,7 @@ public class Robot extends SampleRobot {
 	double direction;
 	AxisCamera camera;
 	
+	
 	CANTalon left1; CANTalon left2; CANTalon left3;
 	CANTalon right1; CANTalon right2; CANTalon right3;
 
