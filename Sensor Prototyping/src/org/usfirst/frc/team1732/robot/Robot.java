@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.CANTalon;
 import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.SampleRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.vision.AxisCamera;
 	
 public class Robot extends SampleRobot {
 	
@@ -18,6 +19,7 @@ public class Robot extends SampleRobot {
 	int numberParticles;
 	int session;
 	double direction;
+	AxisCamera camera;
 	
 	CANTalon left1; CANTalon left2; CANTalon left3;
 	CANTalon right1; CANTalon right2; CANTalon right3;
@@ -39,15 +41,13 @@ public class Robot extends SampleRobot {
 	double max_speed = 0.5;
 	
 	public Robot() {
+		camera = new AxisCamera("10.13.37.24");
 		direction = 0.5;
 		left1 = new CANTalon(11); left2 = new CANTalon(21); left3 = new CANTalon(22);
 		right1 = new CANTalon(14); right2 = new CANTalon(12); right3 = new CANTalon(13);
 		
 		frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
 		binaryFrame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_U8, 0);
-				
-		session = NIVision.IMAQdxOpenCamera("cam0", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
-		NIVision.IMAQdxConfigureGrab(session);
 		
 		SmartDashboard.putBoolean("Capture?", false);
 		SmartDashboard.putBoolean("binaryFrame?", false);
@@ -74,15 +74,14 @@ public class Robot extends SampleRobot {
 	}
 
 	public void operatorControl() {
-		NIVision.IMAQdxStartAcquisition(session);
 		
 		while (isOperatorControl() && isEnabled()) {
 			
 			if (SmartDashboard.getBoolean("Capture?", false)) {
 				
 				// get the image and 
-				NIVision.IMAQdxGrab(session, frame, 1);
-
+				//NIVision.IMAQdxGrab(session, frame, 1);
+				camera.getImage(frame);
 				// Update threshold values from SmartDashboard. For performance reasons it is recommended to remove
 				// this after calibration is finished.
 				GOAL_HUE_RANGE.minValue = (int) SmartDashboard.getNumber("Goal hue min", GOAL_HUE_RANGE.minValue);
