@@ -42,10 +42,11 @@ public class Robot extends SampleRobot {
 	double max_speed = 0.5;
 	
 	public Robot() {
-		camera = new AxisCamera("10.13.37.24");
 		direction = 0.5;
 		left1 = new CANTalon(11); left2 = new CANTalon(21); left3 = new CANTalon(22);
 		right1 = new CANTalon(14); right2 = new CANTalon(12); right3 = new CANTalon(13);
+		
+		camera = new AxisCamera("10.99.99.9");
 		
 		frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
 		binaryFrame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_U8, 0);
@@ -75,11 +76,8 @@ public class Robot extends SampleRobot {
 	}
 
 	public void operatorControl() {
-		
 		while (isOperatorControl() && isEnabled()) {
-			
 			if (SmartDashboard.getBoolean("Capture?", false)) {
-				
 				// get the image and 
 				//NIVision.IMAQdxGrab(session, frame, 1);
 				camera.getImage(frame);
