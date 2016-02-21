@@ -157,6 +157,8 @@ public class Robot extends SampleRobot {
 						SmartDashboard.putNumber("Aspect", bestPar.getAspect());
 						SmartDashboard.putNumber("Distance",  bestPar.getDistance());
 						SmartDashboard.putNumber("Direction", direction);
+						drawRectangle(binaryFrame, bestPar);
+						drawRectangle(frame, bestPar);
 					}
 					else {
 						// Turns in the last known direction, doesn't move forward or back if the last known direction
@@ -174,7 +176,7 @@ public class Robot extends SampleRobot {
 		}
 	}
 	
-	public void turn(double dir, double dist) {
+	private void turn(double dir, double dist) {
 		// linear function
 		if (Math.abs(dir - 0.5) < 0.2) {
 			setMotors((dist-200)/10.0, (dist-200)/10.0); // try to maintain a distance of 200 inches
@@ -187,14 +189,14 @@ public class Robot extends SampleRobot {
 		//else setMotors(0,0);
 	}
 	
-	public void setMotors(double l, double r) {
+	private void setMotors(double l, double r) {
 		left1.set(l); left2.set(l); left3.set(-l); 
 		right1.set(r); right2.set(r); right3.set(-r);
 	}
 	
-	public double limit(double speed) {
+	private double limit(double speed) {
 		return (speed > 0 ? 1 : -1) * (Math.abs(speed) < min_speed ? min_speed : (Math.abs(speed) > max_speed ? max_speed : Math.abs(speed)));
-		// What that means:
+		// What that means (not exactly but equivalent result):
 		/* if (speed > 0) {
 		 *    if (Math.abs(speed) < min_speed) return min_speed;
 		 *    else {
@@ -210,6 +212,20 @@ public class Robot extends SampleRobot {
 		 * }
 		 */
 	}
+	
+	private void drawRectangle(Image image, Particle par) {
+		NIVision.Rect rect = new NIVision.Rect((int) par.getTop(),
+											   (int) par.getLeft(),
+											   (int) (par.getBottom() - par.getTop()),
+											   (int)(par.getRight() - par.getLeft()));
+		NIVision.imaqDrawShapeOnImage(image,
+									  image,
+									  rect,
+									  NIVision.DrawMode.DRAW_VALUE,
+									  NIVision.ShapeMode.SHAPE_RECT, (float) 5.0); 
+		// Not sure what the draw mode, shape mode, and newPixelValue (the last 3 parameters) are fore
+	}
+	
 	
 	/*public static int sortParticles(Particle newPar, ArrayList<Particle> qualifyingParticles) {
 		for (int i = 0; i < qualifyingParticles.size(); i++) {
