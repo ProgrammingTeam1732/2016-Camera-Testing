@@ -24,7 +24,6 @@ public class Robot extends SampleRobot {
 	CANTalon right1; CANTalon right2; CANTalon right3;
 
 	// Constants
-	double VIEW_ANGLE = 77.8;
 	double RATIO = 1.428571; // Goal width = 20 in. / goal height = 12 in. = 1.428
 	
 	// Color Limits
