@@ -13,127 +13,142 @@ import edu.wpi.first.wpilibj.vision.AxisCamera;
 	
 public class Robot extends SampleRobot {
 	
-	// Images
+	// Camera/Images
 	Image frame;
 	Image binaryFrame;
 	int numberParticles;
-	int session;
-	double direction;
 	AxisCamera camera;
 	
-	
+	// Motors
 	CANTalon left1; CANTalon left2; CANTalon left3;
 	CANTalon right1; CANTalon right2; CANTalon right3;
 
 	// Constants
-	NIVision.Range GOAL_HUE_RANGE = new NIVision.Range(110, 130); // Default hue range for goal
-	NIVision.Range GOAL_SAT_RANGE = new NIVision.Range(200, 255); // Default saturation range for goal
-	NIVision.Range GOAL_VAL_RANGE = new NIVision.Range(270, 255); // Default value range for goal
-	
-	double AREA = 100;
+	double VIEW_ANGLE = 77.8;
 	double RATIO = 1.428571; // Goal width = 20 in. / goal height = 12 in. = 1.428
+	
+	// Color Limits
+	NIVision.Range PAR_HUE_RANGE = new NIVision.Range(110, 130); // Default hue range for goal
+	NIVision.Range PAR_SAT_RANGE = new NIVision.Range(200, 255); // Default saturation range for goal
+	NIVision.Range PAR_VAL_RANGE = new NIVision.Range(270, 255); // Default value range for goal
+	
+	// Search Limits
 	double RATIO_MIN = 1.2; // goal width = 20 in. / goal height = 12 in. = 1.428
 	double RATIO_MAX = 1.6; // Goal width = 20 in. / goal height = 12 in. = 1.428
-	double SCORE_MIN = 75.0; // Minimum score to be considered a goal
-	double VIEW_ANGLE = 77.8; // View angle for camera, set to Axis m1011 by default, 64 for m1013, 51.7 for 206, 52 for HD3000 square, 60 for HD3000 640x480
-	int particleLimit = 10;
+	double MIN_AREA = 100;
+	int PAR_LIMIT = 10;
 	
+	// Driving
 	double min_speed = 0.2;
 	double max_speed = 0.5;
+	double direction = 0.5;
 	
 	public Robot() {
-		direction = 0.5;
+		// Motors
 		left1 = new CANTalon(11); left2 = new CANTalon(21); left3 = new CANTalon(22);
 		right1 = new CANTalon(14); right2 = new CANTalon(12); right3 = new CANTalon(13);
 		
+		// Camera/Images
 		camera = new AxisCamera("10.99.99.9");
-		
-		frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
+		frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_HSL, 0);
 		binaryFrame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_U8, 0);
+		CameraServer.getInstance().setQuality(25);
 		
+		// Camera
 		SmartDashboard.putBoolean("Capture?", false);
 		SmartDashboard.putBoolean("binaryFrame?", false);
 
-		SmartDashboard.putNumber("Goal hue min", GOAL_HUE_RANGE.minValue);
-		SmartDashboard.putNumber("Goal hue max", GOAL_HUE_RANGE.maxValue);
-		SmartDashboard.putNumber("Goal sat min", GOAL_SAT_RANGE.minValue);
-		SmartDashboard.putNumber("Goal sat max", GOAL_SAT_RANGE.maxValue);
-		SmartDashboard.putNumber("Goal val min", GOAL_VAL_RANGE.minValue);
-		SmartDashboard.putNumber("Goal val max", GOAL_VAL_RANGE.maxValue);
+		// Color limits
+		SmartDashboard.putNumber("Goal hue min", PAR_HUE_RANGE.minValue);
+		SmartDashboard.putNumber("Goal hue max", PAR_HUE_RANGE.maxValue);
+		SmartDashboard.putNumber("Goal sat min", PAR_SAT_RANGE.minValue);
+		SmartDashboard.putNumber("Goal sat max", PAR_SAT_RANGE.maxValue);
+		SmartDashboard.putNumber("Goal val min", PAR_VAL_RANGE.minValue);
+		SmartDashboard.putNumber("Goal val max", PAR_VAL_RANGE.maxValue);
 		
+		// Search limits
 		SmartDashboard.putNumber("Goal aspect min", RATIO_MIN);
 		SmartDashboard.putNumber("Goal aspect max", RATIO_MAX);
-		SmartDashboard.putNumber("Particle area min", AREA);
+		SmartDashboard.putNumber("Particle area min", MIN_AREA);
+		SmartDashboard.putNumber("Particle Limit", PAR_LIMIT);
 		
+		// Driving
 		SmartDashboard.putNumber("Direction", 0);
 		SmartDashboard.putBoolean("do Aim?", false);
-		
-		SmartDashboard.putNumber("Particle Limit", particleLimit);
 		SmartDashboard.putNumber("Max Speed", max_speed);
 		SmartDashboard.putNumber("Min Speed", min_speed);
 		
-		CameraServer.getInstance().setQuality(25);
+		// Particle Display
+		SmartDashboard.putNumber("Masked particles", 0);
+		SmartDashboard.putNumber("Filtered particles", 0);
+		SmartDashboard.putNumber("Area", 0);
+		SmartDashboard.putNumber("Left", 0);
+		SmartDashboard.putNumber("Right", 0);
+		SmartDashboard.putNumber("Top", 0);
+		SmartDashboard.putNumber("Bottom", 0);
+		SmartDashboard.putNumber("Aspect", 0);
+		SmartDashboard.putNumber("Distance",  0);
+		SmartDashboard.putNumber("Direction", 0);
 	}
 
 	public void operatorControl() {
 		while (isOperatorControl() && isEnabled()) {
 			if (SmartDashboard.getBoolean("Capture?", false)) {
-				// get the image and 
-				//NIVision.IMAQdxGrab(session, frame, 1);
 				camera.getImage(frame);
-				// Update threshold values from SmartDashboard. For performance reasons it is recommended to remove
-				// this after calibration is finished.
-				GOAL_HUE_RANGE.minValue = (int) SmartDashboard.getNumber("Goal hue min", GOAL_HUE_RANGE.minValue);
-				GOAL_HUE_RANGE.maxValue = (int) SmartDashboard.getNumber("Goal hue max", GOAL_HUE_RANGE.maxValue);
-				GOAL_SAT_RANGE.minValue = (int) SmartDashboard.getNumber("Goal sat min", GOAL_SAT_RANGE.minValue);
-				GOAL_SAT_RANGE.maxValue = (int) SmartDashboard.getNumber("Goal sat max", GOAL_SAT_RANGE.maxValue);
-				GOAL_VAL_RANGE.minValue = (int) SmartDashboard.getNumber("Goal val min", GOAL_VAL_RANGE.minValue);
-				GOAL_VAL_RANGE.maxValue = (int) SmartDashboard.getNumber("Goal val max", GOAL_VAL_RANGE.maxValue);
-				min_speed = SmartDashboard.getNumber("Min Speed");
-				max_speed = SmartDashboard.getNumber("Max Speed");
-				RATIO_MIN = SmartDashboard.getNumber("Goal aspect min",   RATIO_MIN);
-				RATIO_MAX = SmartDashboard.getNumber("Goal aspect max",   RATIO_MAX);
-				AREA      = SmartDashboard.getNumber("Particle area min", AREA);
-
-				
-				particleLimit = (int) SmartDashboard.getNumber("Particle Limit", particleLimit);
+				// Set color limits
+				PAR_HUE_RANGE.minValue = (int) SmartDashboard.getNumber("Particle hue min", PAR_HUE_RANGE.minValue);
+				PAR_HUE_RANGE.maxValue = (int) SmartDashboard.getNumber("Particle hue max", PAR_HUE_RANGE.maxValue);
+				PAR_SAT_RANGE.minValue = (int) SmartDashboard.getNumber("Particle sat min", PAR_SAT_RANGE.minValue);
+				PAR_SAT_RANGE.maxValue = (int) SmartDashboard.getNumber("Particle sat max", PAR_SAT_RANGE.maxValue);
+				PAR_VAL_RANGE.minValue = (int) SmartDashboard.getNumber("Particle val min", PAR_VAL_RANGE.minValue);
+				PAR_VAL_RANGE.maxValue = (int) SmartDashboard.getNumber("Particle val max", PAR_VAL_RANGE.maxValue);
 
 				// Threshold the image looking for yellow (Goal color)
-				NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.HSL, GOAL_HUE_RANGE, GOAL_SAT_RANGE, GOAL_VAL_RANGE);
+				NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.HSL, PAR_HUE_RANGE, PAR_SAT_RANGE, PAR_VAL_RANGE);
 
-				// Send particle count to dashboard
+				// Count and display particles
 				int numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
 				SmartDashboard.putNumber("Masked particles", numParticles);
+				SmartDashboard.putNumber("Filtered particles", 0);
 
+				// Set search limits
+				RATIO_MIN = SmartDashboard.getNumber("Particle aspect min",   RATIO_MIN);
+				RATIO_MAX = SmartDashboard.getNumber("Particle aspect max",   RATIO_MAX);
+				MIN_AREA  = SmartDashboard.getNumber("Particle area min", MIN_AREA);
+				PAR_LIMIT = (int) SmartDashboard.getNumber("Particle Limit", PAR_LIMIT);
+				
 				if (numParticles > 0) {					
-					// Measure particles and sort by particle size
-					// Finds 15 largest particles
-					
 					ArrayList<Particle> qualifyingParticles = new ArrayList<Particle>();
 					for (int particleIndex = 0; particleIndex < numParticles; particleIndex++) {
 						Particle par = new Particle(NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP),
 													NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT),
 													NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM),
 													NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT));
-						
 						double temp = par.getAspect();
-						
-						if (par.getArea() > AREA && temp < RATIO_MAX && temp > RATIO_MIN) {
+						if (par.getArea() > MIN_AREA && temp < RATIO_MAX && temp > RATIO_MIN) {
 							qualifyingParticles.add(par);
-							
 							//if (qualifyingParticles.size() > particleLimit) qualifyingParticles.remove(qualifyingParticles.size() - 1);
 						}
 					}
-					
 					SmartDashboard.putNumber("Filtered particles", qualifyingParticles.size());
 					
+					// Set driving limits
+					min_speed = SmartDashboard.getNumber("Min Speed");
+					max_speed = SmartDashboard.getNumber("Max Speed");
+					
+					// If it found a particle, point towards it, then drive towards it
 					if(qualifyingParticles.size() > 0) {
+						// Finds the best particle
 						Particle bestPar = qualifyingParticles.get(0);
-						
 						for (int i = 1; i < qualifyingParticles.size(); i++)
 							if (Math.abs(RATIO - qualifyingParticles.get(i).getAspect()) < Math.abs(RATIO - bestPar.getAspect()))
 								bestPar = qualifyingParticles.get(i);
+						// Saves the direction
 						direction = bestPar.getDirection();
+						// Points at goal
+						if (SmartDashboard.getBoolean("do Aim?", false)) turn(direction, bestPar.getDistance());
+						else setMotors(0,0);
+						// Displays information
 						SmartDashboard.putNumber("Area", bestPar.getArea());
 						SmartDashboard.putNumber("Left", bestPar.getLeft()/640.0);
 						SmartDashboard.putNumber("Right", bestPar.getRight()/640.0);
@@ -142,11 +157,11 @@ public class Robot extends SampleRobot {
 						SmartDashboard.putNumber("Aspect", bestPar.getAspect());
 						SmartDashboard.putNumber("Distance",  bestPar.getDistance());
 						SmartDashboard.putNumber("Direction", direction);
-						if (SmartDashboard.getBoolean("do Aim?", false)) turn(direction, bestPar.getDistance());
-						else setMotors(0,0);
 					}
 					else {
-						if (SmartDashboard.getBoolean("do Aim?", false)) turn(direction, 100000000);
+						// Turns in the last known direction, doesn't move forward or back if the last known direction
+						// was close to 0.5
+						if (SmartDashboard.getBoolean("do Aim?", false)) turn(direction, 200);
 						else setMotors(0,0);
 					}
 					
@@ -159,29 +174,42 @@ public class Robot extends SampleRobot {
 		}
 	}
 	
-	public void setMotors(double l, double r) {
-		left1.set(l); left2.set(l); left3.set(-l); 
-		right1.set(r); right2.set(r); right3.set(-r);
-	}
-	
-	public double limit(double picasso) {
-		return (picasso > 0 ? 1 : -1) * (Math.abs(picasso) < min_speed ? min_speed : (Math.abs(picasso) > max_speed ? max_speed : Math.abs(picasso)));
-	}
-	
 	public void turn(double dir, double dist) {
-		//double dir = par.getDirection();
+		// linear function
 		if (Math.abs(dir - 0.5) < 0.2) {
-			setMotors((dist-200)/10.0, (dist-200)/10.0);
+			setMotors((dist-200)/10.0, (dist-200)/10.0); // try to maintain a distance of 200 inches
 		} else {
-			setMotors(limit((dir - 0.5) / 2.0), limit((dir - 0.5) / 2.0));
+			setMotors(limit((dir - 0.5) / 2.0), limit((dir - 0.5) / 2.0)); // Keeps speed within max and min speeds
 		}
-		
-		
+		// sign function:
 		//if (dir < .4) setMotors(-0.13, -0.13);
 		//else if (dir > .6) setMotors(0.13, 0.13);
 		//else setMotors(0,0);
 	}
 	
+	public void setMotors(double l, double r) {
+		left1.set(l); left2.set(l); left3.set(-l); 
+		right1.set(r); right2.set(r); right3.set(-r);
+	}
+	
+	public double limit(double speed) {
+		return (speed > 0 ? 1 : -1) * (Math.abs(speed) < min_speed ? min_speed : (Math.abs(speed) > max_speed ? max_speed : Math.abs(speed)));
+		// What that means:
+		/* if (speed > 0) {
+		 *    if (Math.abs(speed) < min_speed) return min_speed;
+		 *    else {
+		 *        if (Math.abs(speed)) > max_speed) return max_speed;
+		 *        return -1*Math.abs(speed);
+		 *    }
+		 * } else {
+		 * 	  if (Math.abs(speed) < min_speed) return -1*min_speed;
+		 *    else {
+		 *        if (Math.abs(speed)) > max_speed) return -1*max_speed;
+		 *        else return -1*Math.abs(speed);
+		 *    }
+		 * }
+		 */
+	}
 	
 	/*public static int sortParticles(Particle newPar, ArrayList<Particle> qualifyingParticles) {
 		for (int i = 0; i < qualifyingParticles.size(); i++) {
