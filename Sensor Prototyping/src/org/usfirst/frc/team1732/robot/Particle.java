@@ -43,8 +43,9 @@ public class Particle implements Comparable<Particle> {
 	}
 	
 	public double getDistance() {
-		return ((640/Math.abs(right-left))*20)/(Math.tan(0.679));
+		return (640*20) / (Math.abs(right-left)*2*Math.tan(Math.toRadians(47/2)));
 	}
+	// 640/w = 2*tan(47/2)*d/20
 	
 	public double getDirection() {
 		return (right+left)/1280;

@@ -27,20 +27,21 @@ public class Robot extends SampleRobot {
 	double RATIO = 1.428571; // Goal width = 20 in. / goal height = 12 in. = 1.428
 	
 	// Color Limits
-	NIVision.Range PAR_HUE_RANGE = new NIVision.Range(110, 130); // Default hue range for goal
-	NIVision.Range PAR_SAT_RANGE = new NIVision.Range(200, 255); // Default saturation range for goal
-	NIVision.Range PAR_VAL_RANGE = new NIVision.Range(270, 255); // Default value range for goal
+	NIVision.Range PAR_HUE_RANGE = new NIVision.Range(120, 140); // Default hue range for goal
+	NIVision.Range PAR_SAT_RANGE = new NIVision.Range(50, 255); // Default saturation range for goal
+	NIVision.Range PAR_VAL_RANGE = new NIVision.Range(150, 255); // Default value range for goal
 	
 	// Search Limits
-	double RATIO_MIN = 1.2; // goal width = 20 in. / goal height = 12 in. = 1.428
-	double RATIO_MAX = 1.6; // Goal width = 20 in. / goal height = 12 in. = 1.428
+	double RATIO_MIN = 1.0; // goal width = 20 in. / goal height = 12 in. = 1.428
+	double RATIO_MAX = 1.8; // Goal width = 20 in. / goal height = 12 in. = 1.428
 	double MIN_AREA = 100;
 	int PAR_LIMIT = 10;
 	
 	// Driving
-	double min_speed = 0.2;
-	double max_speed = 0.5;
+	double min_speed = 0.1;
+	double max_speed = 0.18;
 	double direction = 0.5;
+	double speedDivision = 3.0;
 	
 	public Robot() {
 		// Motors
@@ -49,33 +50,36 @@ public class Robot extends SampleRobot {
 		
 		// Camera/Images
 		camera = new AxisCamera("10.99.99.9");
-		frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_HSL, 0);
+		frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
 		binaryFrame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_U8, 0);
-		CameraServer.getInstance().setQuality(25);
+		CameraServer.getInstance().setQuality(50);
 		
 		// Camera
 		SmartDashboard.putBoolean("Capture?", false);
 		SmartDashboard.putBoolean("binaryFrame?", false);
 
 		// Color limits
-		SmartDashboard.putNumber("Goal hue min", PAR_HUE_RANGE.minValue);
-		SmartDashboard.putNumber("Goal hue max", PAR_HUE_RANGE.maxValue);
-		SmartDashboard.putNumber("Goal sat min", PAR_SAT_RANGE.minValue);
-		SmartDashboard.putNumber("Goal sat max", PAR_SAT_RANGE.maxValue);
-		SmartDashboard.putNumber("Goal val min", PAR_VAL_RANGE.minValue);
-		SmartDashboard.putNumber("Goal val max", PAR_VAL_RANGE.maxValue);
+		SmartDashboard.putNumber("Particle hue min", PAR_HUE_RANGE.minValue);
+		SmartDashboard.putNumber("Particle hue max", PAR_HUE_RANGE.maxValue);
+		SmartDashboard.putNumber("Particle sat min", PAR_SAT_RANGE.minValue);
+		SmartDashboard.putNumber("Particle sat max", PAR_SAT_RANGE.maxValue);
+		SmartDashboard.putNumber("Particle val min", PAR_VAL_RANGE.minValue);
+		SmartDashboard.putNumber("Particle val max", PAR_VAL_RANGE.maxValue);
 		
 		// Search limits
-		SmartDashboard.putNumber("Goal aspect min", RATIO_MIN);
-		SmartDashboard.putNumber("Goal aspect max", RATIO_MAX);
+		SmartDashboard.putNumber("Particle aspect min", RATIO_MIN);
+		SmartDashboard.putNumber("Particle aspect max", RATIO_MAX);
 		SmartDashboard.putNumber("Particle area min", MIN_AREA);
 		SmartDashboard.putNumber("Particle Limit", PAR_LIMIT);
+		SmartDashboard.putNumber("Speed division", 0);
 		
 		// Driving
 		SmartDashboard.putNumber("Direction", 0);
 		SmartDashboard.putBoolean("do Aim?", false);
 		SmartDashboard.putNumber("Max Speed", max_speed);
 		SmartDashboard.putNumber("Min Speed", min_speed);
+		SmartDashboard.putNumber("Motor Speed Left", 0);
+		SmartDashboard.putNumber("Motor Speed Right", 0);
 		
 		// Particle Display
 		SmartDashboard.putNumber("Masked particles", 0);
@@ -92,6 +96,7 @@ public class Robot extends SampleRobot {
 
 	public void operatorControl() {
 		while (isOperatorControl() && isEnabled()) {
+			//setMotors(0.3, 0.3);
 			if (SmartDashboard.getBoolean("Capture?", false)) {
 				camera.getImage(frame);
 				// Set color limits
@@ -156,44 +161,49 @@ public class Robot extends SampleRobot {
 						SmartDashboard.putNumber("Aspect", bestPar.getAspect());
 						SmartDashboard.putNumber("Distance",  bestPar.getDistance());
 						SmartDashboard.putNumber("Direction", direction);
-						drawRectangle(binaryFrame, bestPar);
 						drawRectangle(frame, bestPar);
 					}
 					else {
-						// Turns in the last known direction, doesn't move forward or back if the last known direction
-						// was close to 0.5
-						if (SmartDashboard.getBoolean("do Aim?", false)) turn(direction, 200);
-						else setMotors(0,0);
+						setMotors(0,0);
 					}
 					
 				}
-				
+				else setMotors(0, 0);
 				// Send masked image to dashboard to assist in tweaking mask.
 				if(SmartDashboard.getBoolean("binaryFrame?", false)) CameraServer.getInstance().setImage(binaryFrame);
 				else CameraServer.getInstance().setImage(frame);
 			}
+			else setMotors(0, 0);
 		}
 	}
 	
 	private void turn(double dir, double dist) {
-		// linear function
+		speedDivision = SmartDashboard.getNumber("Speed division");
+		double speed = 0.0;
 		if (Math.abs(dir - 0.5) < 0.2) {
-			setMotors((dist-200)/10.0, (dist-200)/10.0); // try to maintain a distance of 200 inches
+			speed = (dist-100)/100;
+			setMotors(limit(speed), limit(speed));
+			SmartDashboard.putNumber("Motor Speed Left", speed);
+			SmartDashboard.putNumber("Motor Speed Right", speed);
 		} else {
-			setMotors(limit((dir - 0.5) / 2.0), limit((dir - 0.5) / 2.0)); // Keeps speed within max and min speeds
+		    speed = limit((dir - 0.5) / speedDivision);
+			setMotors(-speed, speed);
+			SmartDashboard.putNumber("Motor Speed Left", speed);
+			SmartDashboard.putNumber("Motor Speed Right", -speed);
 		}
-		// sign function:
-		//if (dir < .4) setMotors(-0.13, -0.13);
-		//else if (dir > .6) setMotors(0.13, 0.13);
-		//else setMotors(0,0);
 	}
 	
 	private void setMotors(double l, double r) {
-		left1.set(l); left2.set(l); left3.set(-l); 
+		left1.set(-l); left2.set(-l); left3.set(l); 
 		right1.set(r); right2.set(r); right3.set(-r);
 	}
 	
 	private double limit(double speed) {
+ 		//if (speed > max_speed) {
+ 		//	return max_speed;
+ 		//} else if (speed < -max_speed) {
+ 		//	return -max_speed;
+ 		//} else return speed;
 		return (speed > 0 ? 1 : -1) * (Math.abs(speed) < min_speed ? min_speed : (Math.abs(speed) > max_speed ? max_speed : Math.abs(speed)));
 		// What that means (not exactly but equivalent result):
 		/* if (speed > 0) {
@@ -220,8 +230,8 @@ public class Robot extends SampleRobot {
 		NIVision.imaqDrawShapeOnImage(image,
 									  image,
 									  rect,
-									  NIVision.DrawMode.DRAW_VALUE,
-									  NIVision.ShapeMode.SHAPE_RECT, (float) 5.0); 
+									  NIVision.DrawMode.PAINT_VALUE,
+									  NIVision.ShapeMode.SHAPE_RECT, (float) 0x00FF00); 
 		// Not sure what the draw mode, shape mode, and newPixelValue (the last 3 parameters) are fore
 	}
 	
