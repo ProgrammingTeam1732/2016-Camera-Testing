@@ -246,7 +246,6 @@ public class Robot extends SampleRobot {
 	
 	// Simple method that finds the particles with the highest areas
 	// No need to worry about what happens if the original size is filled up- there are only set methods, not add methods used
-
 	/* Comparator function for sorting particles. Returns true if particle 1 is larger
 	static boolean CompareParticleSizes(ParticleReport particle1, ParticleReport particle2) {
 		// we want descending sort order
