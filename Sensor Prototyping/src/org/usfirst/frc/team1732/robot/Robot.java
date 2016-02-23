@@ -10,6 +10,8 @@ import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.SampleRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.vision.AxisCamera;
+import edu.wpi.first.wpilibj.vision.AxisCamera.ExposureControl;
+import edu.wpi.first.wpilibj.vision.AxisCamera.WhiteBalance;
 	
 public class Robot extends SampleRobot {
 	
@@ -53,7 +55,12 @@ public class Robot extends SampleRobot {
 		frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
 		binaryFrame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_U8, 0);
 		CameraServer.getInstance().setQuality(50);
-		
+		//camera.writeColorLevel(40);
+		//camera.writeWhiteBalance(WhiteBalance.kFixedFluorescent1);
+		//camera.writeExposureControl(ExposureControl.kAutomatic);
+		//camera.writeBrightness(40);
+		//camera.writeBrightness(5);
+		//camera.writeExposureControl(ExposureControl.kAutomatic);
 		// Camera
 		SmartDashboard.putBoolean("Capture?", false);
 		SmartDashboard.putBoolean("binaryFrame?", false);
@@ -179,7 +186,18 @@ public class Robot extends SampleRobot {
 	
 	private void turn(double dir, double dist) {
 		speedDivision = SmartDashboard.getNumber("Speed division");
-		double speed = 0.0;
+		//setMotors(((dist-100)/100.0 - ((dir - 0.5) / 15.0)) / 2, ((dist-100)/100.0 + ((dir - 0.5) / 15.0)) / 2);
+		double leftMotorSpeed;
+	    double rightMotorSpeed;
+
+	    double moveValue = (dist - 100) / 100;
+	    double rotateValue = (-dir + 0.5) / 4;
+
+	    leftMotorSpeed = moveValue + rotateValue;
+	    rightMotorSpeed = moveValue - rotateValue;
+
+	    setMotors(limit(leftMotorSpeed), limit(rightMotorSpeed));
+		/*
 		if (Math.abs(dir - 0.5) < 0.2) {
 			speed = (dist-100)/100;
 			setMotors(limit(speed), limit(speed));
@@ -190,7 +208,7 @@ public class Robot extends SampleRobot {
 			setMotors(-speed, speed);
 			SmartDashboard.putNumber("Motor Speed Left", speed);
 			SmartDashboard.putNumber("Motor Speed Right", -speed);
-		}
+		}*/
 	}
 	
 	private void setMotors(double l, double r) {
